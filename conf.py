@@ -2,8 +2,18 @@
 
 import time
 
-GITHUB_API_TOKEN = 'your_github_api_token_here'
+#v2
 #https://github.com/getnikola/plugins/tree/master/v8/github_widget
+
+# GitHub deployment configuration
+
+GITHUB_DEPLOY_BRANCH = 'gh-pages'
+GITHUB_SOURCE_BRANCH = 'main'
+GITHUB_REMOTE_NAME = 'origin'
+
+# IMPORTANT:
+# False car le déploiement est géré par GitHub Actions
+GITHUB_COMMIT_SOURCE = False
 
 # !! This is the configuration of Nikola. !! #
 # !!  You should edit it to your liking.  !! #
@@ -680,20 +690,6 @@ REDIRECTIONS = []
 #         "rsync -rav --delete --delete-after output/ joe@my.site:/srv/www/site",
 #     ]
 # }
-
-# github_deploy configuration
-# For more details, read the manual:
-# https://getnikola.com/handbook.html#deploying-to-github
-# You will need to configure the deployment branch on GitHub.
-GITHUB_SOURCE_BRANCH = 'src'
-GITHUB_DEPLOY_BRANCH = 'master'
-
-# The name of the remote where you wish to push to, using github_deploy.
-GITHUB_REMOTE_NAME = 'origin'
-
-# Whether or not github_deploy should commit to the source branch automatically
-# before deploying.
-GITHUB_COMMIT_SOURCE = True
 
 # Where the output site should be located
 # If you don't use an absolute path, it will be considered as relative
