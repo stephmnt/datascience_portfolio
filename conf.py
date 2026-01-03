@@ -22,10 +22,10 @@ GITHUB_COMMIT_SOURCE = False
 
 GITHUB_METADATA = {
     "manual_repositories": [
-        {"full_name": "stephmnt/credit-scoring-mlops", "release_badge": True},
+        {"full_name": "stephmnt/credit-scoring-mlops", "release_badge": True, "created_at_badge": True},
         "stephmnt/datascience_portfolio",
         "stephmnt/attrition_ESN",
-        {"full_name": "stephmnt/OCR_Projet05", "release_badge": True},
+        {"full_name": "stephmnt/OCR_Projet05", "release_badge": True, "created_at_badge": True},
         "stephmnt/training-relations-in-ai-applications",
         "stephmnt/IATimeline",
         ],

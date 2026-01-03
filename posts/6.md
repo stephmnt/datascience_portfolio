@@ -1,0 +1,5 @@
+<!--
+.. title: Projet 2
+.. slug: projet-2
+.. date: 2026-01-01 00:00:01
+-->

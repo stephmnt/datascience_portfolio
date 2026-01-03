@@ -10,6 +10,7 @@
 {% set show_stars = theme_config.get("github_show_stars", True) if theme_config is defined else True %}
 {% set show_forks = theme_config.get("github_show_forks", True) if theme_config is defined else True %}
 {% set show_actions = theme_config.get("github_show_actions", True) if theme_config is defined else True %}
+{% set show_created_at = theme_config.get("github_show_created_at", False) if theme_config is defined else False %}
 {% if github is defined and github.public_repositories %}
     <ul class="feature-icons">
     {% for r in github.public_repositories %}
@@ -47,10 +48,18 @@
             {% elif theme_config is defined and theme_config.get("github_actions_branch") %}
                 {% set actions_branch = theme_config.get("github_actions_branch") %}
             {% endif %}
+            {% set created_label = None %}
+            {% if r.created_label is defined and r.created_label %}
+                {% set created_label = r.created_label %}
+            {% elif theme_config is defined and theme_config.get("github_created_label") %}
+                {% set created_label = theme_config.get("github_created_label") %}
+            {% endif %}
             {% set has_release = release_label or (r.release_badge is defined and r.release_badge) or (r.has_release is defined and r.has_release) %}
             {% set show_release = has_release and full_name %}
             {% set show_actions_badge = show_actions and actions_workflow and full_name %}
-            {% set show_badges = full_name and (show_stars or show_forks or show_release or show_actions_badge) %}
+            {% set has_created_at = (r.created_at_badge is defined and r.created_at_badge) or (r.has_created_at is defined and r.has_created_at) %}
+            {% set show_created_badge = full_name and (show_created_at or has_created_at) %}
+            {% set show_badges = full_name and (show_stars or show_forks or show_release or show_actions_badge or show_created_badge) %}
             {% if r.language or show_badges or (r.stargazers_count is defined and r.stargazers_count is not none) or (r.forks_count is defined and r.forks_count is not none) %}
             <small>
                 {% if r.language %}<span>{{ r.language|e }}</span>{% endif %}
@@ -78,6 +87,12 @@
                         <a style="border: none;" href="https://github.com/{{ full_name|e }}/actions/workflows/{{ actions_workflow|e }}" target="_blank" rel="noopener noreferrer">
                             <img alt="GitHub Actions" src="https://img.shields.io/github/actions/workflow/status/{{ full_name|e }}/{{ actions_workflow|e }}?branch={{ actions_branch|e }}" />
                         </a>
+                    </span>
+                    {% endif %}
+                    {% if show_created_badge %}
+                    {% set created_query = "?label=" ~ created_label if created_label else "" %}
+                    <span>
+                        <img alt="GitHub Created At" src="https://img.shields.io/github/created-at/{{ full_name|e }}{{ created_query|e }}" />
                     </span>
                     {% endif %}
                 {% else %}<!--
