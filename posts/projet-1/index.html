@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html><body>
+<header><h2>credit scoring MLOps</h2>
+        </header><!-- Page Content --><div class="content">
+            <h4>Introduction</h4>
+<p>L’objectif n’était pas seulement d’obtenir de bonnes performances statistiques, mais de livrer un <strong>système de décision fiable, explicable, industrialisé et monitoré</strong>, capable de répondre aux enjeux du crédit à la consommation.</p>
+<hr>
+<h4>Contexte et problématique métier</h4>
+<p>Le projet démarre dans un contexte de forte pression opérationnelle.
+Chez <em>Prêt à Dépenser</em>, l’équipe <strong>Credit Express</strong> cherche à réduire au maximum le temps de décision pour l’octroi de crédit. En parallèle, la direction des risques est confrontée à une augmentation des impayés.</p>
+<p>On se retrouve donc face à une tension classique :
+<strong>aller vite</strong>, sans <strong>augmenter le risque</strong>.</p>
+<p>Mon rôle a été de trouver un équilibre entre ces deux exigences, en tenant compte de contraintes fortes :</p>
+<ul>
+<li>des données déséquilibrées,</li>
+<li>des obligations de transparence et d’explicabilité,</li>
+<li>et un besoin de mise en production rapide.</li>
+</ul>
+<p>Le besoin métier est alors clairement formulé : produire un score de probabilité de défaut, associé à une décision d’octroi, explicable et utilisable en production, avec un suivi dans le temps.</p>
+<hr>
+<h4>État initial et diagnostic</h4>
+<p>Lorsque j’analyse l’existant, je constate qu’il n’y a pas encore de solution en production.
+En revanche, il existe une base de travail solide : des notebooks de modélisation, des datasets riches issus de plusieurs sources, et un premier travail de feature engineering déjà aligné avec la logique métier.</p>
+<p>Le problème n’est donc pas la qualité de l’exploration, mais le <strong>passage à l’échelle</strong>.</p>
+<p>Plusieurs écarts majeurs apparaissent :</p>
+<ul>
+<li>pas d’API stable pour exposer le modèle,</li>
+<li>pas de contrat de données clair,</li>
+<li>pas de monitoring en production,</li>
+<li>et une traçabilité incomplète malgré l’usage de MLflow.</li>
+</ul>
+<p>À ce stade, la solution est techniquement intéressante, mais <strong>non exploitable par le métier</strong>.</p>
+<hr>
+<h4>Choix de la solution cible</h4>
+<p>La solution cible que je propose repose sur un principe simple :
+<strong>faire moins, mais mieux, et surtout durablement</strong>.</p>
+<p>Côté modélisation, je privilégie des modèles tabulaires robustes, bien adaptés aux données de crédit. Ils offrent un bon compromis entre performance, stabilité et explicabilité.
+L’objectif n’est pas de maximiser un score abstrait, mais de maîtriser le coût métier, notamment en pénalisant fortement les faux négatifs.</p>
+<p>L’explicabilité est intégrée dès la conception, à deux niveaux :</p>
+<ul>
+<li>globale, pour comprendre les facteurs de risque dominants,</li>
+<li>locale, pour justifier une décision sur un dossier précis.</li>
+</ul>
+<p>Côté industrialisation, l’architecture s’articule autour de briques simples et open source :</p>
+<ul>
+<li>MLflow pour le suivi des expériences et des versions,</li>
+<li>une API FastAPI pour le scoring,</li>
+<li>Docker et CI/CD pour un déploiement reproductible,</li>
+<li>et un système de logs structuré alimentant le monitoring.</li>
+</ul>
+<p>Le modèle devient ainsi un <strong>service</strong>, et non plus un simple fichier de sortie de notebook.</p>
+<hr>
+<h4>Cas d’usage et valeur métier</h4>
+<p>Quatre cas d’usage principaux sont priorisés.</p>
+<p>D’abord, le scoring standard, exposé via une API, utilisé directement dans le parcours d’octroi.
+Ensuite, un scoring minimal, avec un nombre réduit de variables, pour des parcours rapides.
+Troisièmement, l’explicabilité locale, essentielle pour les analystes crédit et la conformité.
+Enfin, le monitoring continu, pour détecter les dérives de données ou de performance avant qu’elles n’impactent le métier.</p>
+<p>Cette approche permet une adoption progressive par les équipes, tout en sécurisant la production.</p>
+<hr>
+<h4>Démarche projet et pilotage</h4>
+<p>Sur le plan méthodologique, je m’appuie sur une démarche inspirée de CRISP-DM, mais exécutée de façon agile.</p>
+<p>Le projet est découpé en phases courtes :</p>
+<ul>
+<li>cadrage métier et exploration des données,</li>
+<li>préparation et modélisation avec sélection d’un seuil métier,</li>
+<li>industrialisation et tests,</li>
+<li>mise en place du monitoring,</li>
+<li>puis optimisation et sécurisation des performances.</li>
+</ul>
+<p>Les décisions sont systématiquement appuyées par des indicateurs clairs.
+Côté business : taux d’acceptation, pertes nettes, délai de décision.
+Côté machine learning : AUC, recall, score custom, calibration.
+Côté opérations : latence, taux d’erreur, qualité des logs.</p>
+<p>Ces KPI servent de langage commun entre le métier, la data et l’IT.</p>
+<hr>
+<h4>Suivi, monitoring et maîtrise du risque</h4>
+<p>Un point clé du projet est le suivi post-déploiement.
+Chaque prédiction génère des traces exploitables : distributions de scores, dérive des features, performance dans le temps.</p>
+<p>Un tableau de bord permet de surveiller :</p>
+<ul>
+<li>le drift des données,</li>
+<li>la stabilité des scores,</li>
+<li>et les performances opérationnelles de l’API.</li>
+</ul>
+<p>Un runbook est également défini pour guider les équipes en cas d’incident : identifier rapidement si le problème vient des données, du modèle ou de l’infrastructure.</p>
+<p>On passe ainsi d’un modèle “boîte noire” à un <strong>système maîtrisé et observable</strong>.</p>
+<hr>
+<h4>Conclusion et perspectives</h4>
+<p>Pour conclure, ce projet illustre le passage d’un besoin métier critique à une solution MLOps complète et exploitable.
+Le modèle n’est pas seulement performant : il est <strong>aligné avec les enjeux économiques</strong>, explicable, industrialisé et surveillé dans le temps.</p>
+<p>Les prochaines étapes sont clairement identifiées :</p>
+<ul>
+<li>mise en place de retrainings périodiques,</li>
+<li>amélioration éventuelle de la calibration des probabilités,</li>
+<li>enrichissement des dashboards avec des segments métier,</li>
+<li>et, à terme, une approche champion/challenger pour faire évoluer le scoring sans risque.</li>
+</ul>
+<p>Merci pour votre attention, je suis prêt à répondre à vos questions.</p>
+<hr>
+<p>Si tu veux, je peux aussi :</p>
+<ul>
+<li>
+<strong>réduire à 5 minutes</strong> (version ultra-synthèse),</li>
+<li>
+<strong>ajouter des phrases “anti-questions pièges”</strong> pour le jury,</li>
+<li>ou <strong>adapter le discours à ton profil exact</strong> (data scientist / ML engineer / product data).</li>
+</ul>
+</div>
+</body></html>

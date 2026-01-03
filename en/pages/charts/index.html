@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><body>
+<header><h2>Charts</h2>
+        </header><!-- Page Content --><div class="content">
+            <p>If you are using reStructuredText and install pygal, Nikola has support for rather nice charts
+with little effort, and i's even semi-interactive (hover your pointer over the legend!):</p>
+<div class="code"><pre class="code rest"><a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-1" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-1" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-1"></a><span class="p">..</span> <span class="ow">chart</span><span class="p">::</span> StackedLine
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-2" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-2" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-2"></a>   <span class="nc">:title:</span> 'Browser usage evolution (in %)'
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-3" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-3" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-3"></a>   <span class="nc">:fill:</span> True
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-4" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-4" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-4"></a>   <span class="nc">:x_labels:</span> ['2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012']
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-5" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-5" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-5"></a>   <span class="nc">:width:</span> 600
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-6" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-6" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-6"></a>   <span class="nc">:height:</span> 400
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-7" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-7" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-7"></a>   <span class="nc">:explicit_size:</span> True
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-8" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-8" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-8"></a>   <span class="nc">:style:</span> BlueStyle
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-9" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-9" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-9"></a>
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-10" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-10" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-10"></a>   ('Others',  [14.2, 15.4, 15.3,  8.9,    9, 10.4,  8.9,  5.8,  6.7,  6.8,  7.5])
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-11" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-11" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-11"></a>   ('IE',      [85.8, 84.6, 84.7, 74.5,   66, 58.6, 54.7, 44.8, 36.2, 26.6, 20.1])
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-12" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-12" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-12"></a>   ('Firefox', [None, None, None, 16.6,   25,   31, 36.4, 45.5, 46.3, 42.8, 37.1])
+<a id="rest_code_f5aa9e55626c48b48ba5bf1f89961929-13" name="rest_code_f5aa9e55626c48b48ba5bf1f89961929-13" href="../../../pages/charts/#rest_code_f5aa9e55626c48b48ba5bf1f89961929-13"></a>   ('Chrome',  [None, None, None, None, None, None,    0,  3.9, 10.8, 23.8, 35.3])
+</pre></div>
+<div style="text-align: center;"><div class="text-error">In order to use the Chart directive, you must install the "pygal" Python package.</div></div>
+<p>Here's how it works:</p>
+<ul class="simple">
+<li><p>Next to the directive, use the <a class="reference external" href="http://pygal.org/chart_types/">chart type you want</a></p></li>
+<li><p>Any option you can set in a chart? Use it like <code class="docutils literal">:title:</code> in this example. Syntax on
+the value is just like in the pygal examples.</p></li>
+<li><p>For each data series do it like the line that says <code class="docutils literal">Firefox</code> in this example. The first element
+is the label, then comes the data.</p></li>
+</ul>
+<p>Easy, right? Please explore <a class="reference external" href="http://pygal.org">the pygal site</a> for more information, and just
+take this example and tweak stuff.</p>
+        </div>
+</body></html>
