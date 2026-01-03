@@ -1,0 +1,8 @@
+[Core]
+Name = mermaid
+Module = mermaid
+
+[Documentation]
+Author = Stéphane Manet
+Version = 0.1.0
+Description = Mermaid shortcode for Nikola
