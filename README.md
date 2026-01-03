@@ -2,20 +2,81 @@ https://html5up.net/strata -> le plus simple, plus pratique
 https://html5up.net/miniport
 https://html5up.net/paradigm-shift -> préféré de Marharyta
 
-This folder contains the source used to generate a static site using Nikola.
+# Datascience Portfolio (Nikola)
 
-Installation and documentation at https://getnikola.com/
+Ce dépôt contient le code source du site statique généré avec Nikola.
 
-Configuration file for the site is ``conf.py``.
+Documentation officielle : https://getnikola.com/
+Fichier de configuration : `conf.py`
 
-To build the site::
+## Pré-requis locaux
 
-    nikola build
+- Python 3.8+
+- Nikola (`pip install nikola`)
 
-To see it::
+## Commandes locales utiles
 
-    nikola serve -b
+Construire le site :
+```
+nikola build
+```
 
-To check all available commands::
+Prévisualiser en local :
+```
+nikola serve -b
+```
 
-    nikola help
+Voir toutes les commandes :
+```
+nikola help
+```
+
+Nettoyer les caches (utile avant un build propre) :
+```
+nikola clean
+rm -f .doit.db
+```
+
+## Déploiement GitHub Pages (workflow)
+
+Le déploiement est automatisé avec GitHub Actions via :
+```
+.github/workflows/deploy.yml
+```
+
+Le workflow utilise l’action `getnikola/nikola-action@v2` et exécute :
+```
+nikola github_deploy
+```
+
+Configuration attendue dans `conf.py` :
+- `GITHUB_SOURCE_BRANCH = 'main'`
+- `GITHUB_DEPLOY_BRANCH = 'gh-pages'`
+- `GITHUB_COMMIT_SOURCE = False` (car le déploiement est géré par Actions)
+
+### Configuration GitHub Pages
+
+Dans GitHub → Settings → Pages :
+- Source : **Deploy from a branch**
+- Branch : `gh-pages` / `/(root)`
+
+Une fois le workflow terminé, la page devient visible après quelques minutes.
+
+### Initialiser `gh-pages` (si la branche n’existe pas)
+
+```
+git checkout --orphan gh-pages
+git rm -rf .
+touch .nojekyll
+git commit -m "Init gh-pages"
+git push origin gh-pages
+git checkout main
+```
+
+## Pièges fréquents et correctifs
+
+- `.doit.db` ne doit jamais être versionné (format dépendant de l’OS).
+  Supprimez-le localement et laissez Nikola le régénérer.
+- Erreur `dbm.error: db type could not be determined` :
+  supprimez `.doit.db` et relancez un `nikola build`.
+- `cache/` et `output/` sont des artefacts : ils ne doivent pas être commités.

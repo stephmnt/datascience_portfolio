@@ -6,3 +6,7 @@ Module = mermaid
 Author = Stéphane Manet
 Version = 0.1.0
 Description = Mermaid shortcode for Nikola
+
+[Nikola]
+PluginCategory = Shortcode
+MinVersion = 8.0.0

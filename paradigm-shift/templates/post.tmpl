@@ -1,0 +1,13 @@
+        <!-- Page Header -->
+        {% block content_header scoped %}
+        <header>
+            <h2>{{ post.title()|e }}</h2>
+        </header>
+        {% endblock %}
+
+        <!-- Page Content -->
+        {% block content_post scoped %}
+        <div class="content">
+            {{ post.text(teaser_only=False) }}
+        </div>
+        {% endblock %}  

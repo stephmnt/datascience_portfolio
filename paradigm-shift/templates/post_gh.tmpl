@@ -1,0 +1,100 @@
+{% block content_header scoped %}
+<header>
+    <h2>{{ post.title()|e }}</h2>
+</header>
+{% endblock %}
+<!-- Page Content -->
+{% block content_post scoped %}
+<div class="content">
+{{ post.text(teaser_only=False) }}
+{% set show_stars = theme_config.get("github_show_stars", True) if theme_config is defined else True %}
+{% set show_forks = theme_config.get("github_show_forks", True) if theme_config is defined else True %}
+{% set show_actions = theme_config.get("github_show_actions", True) if theme_config is defined else True %}
+{% if github is defined and github.public_repositories %}
+    <ul class="feature-icons">
+    {% for r in github.public_repositories %}
+        <li class="icon brands fa-github-alt">
+            <a href="{{ r.html_url|e }}" target="_blank" rel="noopener noreferrer">{{ r.name|e }}</a>
+            {% if r.description %}<p>{{ r.description|e }}</p>{% endif %}
+            {% set full_name = r.full_name if r.full_name is defined and r.full_name else None %}
+            {% if not full_name and github is defined and github.user_login and github.user_login != "manual" %}
+                {% set full_name = github.user_login ~ "/" ~ r.name %}
+            {% endif %}
+            {% set release_label = None %}
+            {% if r.latest_release is defined and r.latest_release %}
+                {% if r.latest_release is string %}
+                    {% set release_label = r.latest_release %}
+                {% elif r.latest_release.tag_name is defined and r.latest_release.tag_name %}
+                    {% set release_label = r.latest_release.tag_name %}
+                {% elif r.latest_release.name is defined and r.latest_release.name %}
+                    {% set release_label = r.latest_release.name %}
+                {% endif %}
+            {% endif %}
+            {% if not release_label and r.release_tag is defined and r.release_tag %}
+                {% set release_label = r.release_tag %}
+            {% endif %}
+            {% set actions_workflow = None %}
+            {% if r.actions_workflow is defined and r.actions_workflow %}
+                {% set actions_workflow = r.actions_workflow %}
+            {% elif r.actions_workflow_file is defined and r.actions_workflow_file %}
+                {% set actions_workflow = r.actions_workflow_file %}
+            {% endif %}
+            {% set actions_branch = "main" %}
+            {% if r.actions_branch is defined and r.actions_branch %}
+                {% set actions_branch = r.actions_branch %}
+            {% elif r.default_branch is defined and r.default_branch %}
+                {% set actions_branch = r.default_branch %}
+            {% elif theme_config is defined and theme_config.get("github_actions_branch") %}
+                {% set actions_branch = theme_config.get("github_actions_branch") %}
+            {% endif %}
+            {% set has_release = release_label or (r.release_badge is defined and r.release_badge) or (r.has_release is defined and r.has_release) %}
+            {% set show_release = has_release and full_name %}
+            {% set show_actions_badge = show_actions and actions_workflow and full_name %}
+            {% set show_badges = full_name and (show_stars or show_forks or show_release or show_actions_badge) %}
+            {% if r.language or show_badges or (r.stargazers_count is defined and r.stargazers_count is not none) or (r.forks_count is defined and r.forks_count is not none) %}
+            <small>
+                {% if r.language %}<span>{{ r.language|e }}</span>{% endif %}
+                {% if full_name %}
+                    {% if show_stars %}
+                    <span>
+                        <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/{{ full_name|e }}" />
+                    </span>
+                    {% endif %}
+                    {% if show_forks %}
+                    <span>
+                        <img alt="GitHub forks" src="https://img.shields.io/github/forks/{{ full_name|e }}" />
+                    </span>
+                    {% endif %}
+                    {% if show_release %}
+                    {% set release_alt = release_label if release_label else "GitHub release" %}
+                    <span>
+                        <a style="border: none;" href="https://github.com/{{ full_name|e }}/releases/latest" target="_blank" rel="noopener noreferrer">
+                            <img alt="{{ release_alt|e }}" src="https://img.shields.io/github/v/release/{{ full_name|e }}" />
+                        </a>
+                    </span>
+                    {% endif %}
+                    {% if show_actions_badge %}
+                    <span>
+                        <a style="border: none;" href="https://github.com/{{ full_name|e }}/actions/workflows/{{ actions_workflow|e }}" target="_blank" rel="noopener noreferrer">
+                            <img alt="GitHub Actions" src="https://img.shields.io/github/actions/workflow/status/{{ full_name|e }}/{{ actions_workflow|e }}?branch={{ actions_branch|e }}" />
+                        </a>
+                    </span>
+                    {% endif %}
+                {% else %}<!--
+                    {% if r.stargazers_count is defined and r.stargazers_count is not none %}<span>Stars: {{ r.stargazers_count }}</span>{% endif %}
+                    {% if r.forks_count is defined and r.forks_count is not none %}<span>Forks: {{ r.forks_count }}</span>{% endif %}
+                    {% if release_label %}<span>Release: {{ release_label|e }}</span>{% endif %}-->
+                {% endif %}
+            </small>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+  <p>No public repositories found.</p>
+  {% if github is defined and github.errors %}
+    <pre>{{ github.errors|e }}</pre>
+  {% endif %}
+{% endif %}
+</div>
+{% endblock %}  

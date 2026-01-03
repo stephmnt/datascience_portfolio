@@ -1,0 +1,16 @@
+{% extends 'base.tmpl' %}
+{% block center_section %}
+{% set type_templates = {
+    'post_list': 'post_list.tmpl',
+    'cta': 'post_cta.tmpl',
+    'post_cta': 'post_cta.tmpl',
+    'gallery': 'post_gallery.tmpl',
+} %}
+{% for post in posts|reverse %}
+<!-- Section -->
+<section{% if (loop is defined and loop.first) or (loop is not defined) %} id="first"{% endif %}>
+        {% set post_template = post.meta('template') or type_templates.get(post.meta('type'), 'post.tmpl') %}
+        {% include post_template %}
+</section>
+{% endfor %}
+{% endblock %}

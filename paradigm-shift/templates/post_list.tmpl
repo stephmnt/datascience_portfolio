@@ -1,0 +1,21 @@
+{% block content_header scoped %}
+<header>
+    <h2>{{ post.title()|e }}</h2>
+</header>
+{% endblock %}
+<!-- Page Content -->
+{% block content_post scoped %}
+<div class="content">
+    <p><strong>Etiam tristique libero</strong> eu nibh porttitor amet fermentum. Nullam venenatis erat id vehicula ultrices sed ultricies condimentum.</p>
+    <ul class="feature-icons">
+        {% for i in range(1, 7) %}
+            {% set icon = post.meta('icon_' ~ i) %}
+            {% set text = post.meta('list_' ~ i) %}
+            {% if icon and text %}
+                <li class="icon solid fa-{{ icon|e }}">{{ text|e }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {{ post.text(teaser_only=False) }}
+</div>
+{% endblock %}  

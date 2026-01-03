@@ -76,11 +76,13 @@
     </style>
 </%block>
 
-{% for repo in github.repos %}
-  <h3><a href="{{ repo.url }}">{{ repo.name }}</a></h3>
-  <p>{{ repo.description }}</p>
-  <small>⭐ {{ repo.stars }} · {{ repo.language }}</small>
-{% endfor %}
+{% if github is defined and github.public_repositories %}
+  {% for repo in github.public_repositories %}
+    <h3><a href="{{ repo.html_url }}">{{ repo.full_name }}</a></h3>
+    <p>{{ repo.description }}</p>
+    <small>* {{ repo.stargazers_count }} · {{ repo.language }}</small>
+  {% endfor %}
+{% endif %}
 
 <%block name="content">
 <article class="storypage" itemscope="itemscope" itemtype="http://schema.org/Article">

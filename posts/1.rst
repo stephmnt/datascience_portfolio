@@ -1,28 +1,9 @@
-.. title: Welcome to Nikola
-.. slug: welcome-to-nikola
-.. date: 2012-03-30 23:00:00 UTC-03:00
-.. tags: nikola, python, demo, blog
-.. author: Roberto Alsina
-.. link: https://getnikola.com/
-.. description:
-.. category: nikola
+.. title: À propos de ce portfolio
+.. slug: a-propos
+.. date: 2025-09-01 00:00:01
 
-.. figure:: https://farm1.staticflickr.com/138/352972944_4f9d568680.jpg
-   :target: https://farm1.staticflickr.com/138/352972944_4f9d568680_z.jpg?zz=1
-   :class: thumbnail
-   :alt: Nikola Tesla Corner by nicwest, on Flickr
+Ce portfolio présente une sélection de mes projets en science des données, mettant en avant mes compétences en analyse de données, modélisation prédictive et visualisation. Chaque projet illustre une approche méthodologique rigoureuse et l'utilisation d'outils modernes pour résoudre des problèmes réels.
 
-If you can see this in a web browser, it means you managed to install Nikola,
-and build a site using it. Congratulations!
+Il a été réalisé dans le cadre de ma formation en Data Science avec OpenClassRooms.
 
-Next steps:
-
-* :doc:`Read the manual <handbook>`
-* `Visit the Nikola website to learn more <https://getnikola.com>`__
-* `See a demo photo gallery <link://gallery/demo>`__
-* :doc:`See a demo listing <listings-demo>`
-* :doc:`See a demo of a longer text <dr-nikolas-vendetta>`
-
-Send feedback to info@getnikola.com!
-
-{% include "github_repos.tmpl" %}
+J'ai utilisé le générateur de site statique [Nikola](https://getnikola.com/) pour créer ce portfolio, ce qui m'a permis de personnaliser le design et d'organiser efficacement le contenu. Je me suis appuyé sur le thème "Paradigm Shift" que j'ai adapté au format Nikola. Pour les besoins de présentation du portfolio, j'ai développé deux plugins, l'un pour intégrer les repos GitHub des projets, et l'autre pour rendre les diagrammes Mermaid compatibles avec les shortcodes Nikola.

@@ -23,4 +23,5 @@ jobs:
           GIT_CONFIG_KEY_0: safe.directory
           GIT_CONFIG_VALUE_0: /github/workspace
         with:
-          args: github_deploy
+          entryPoint: /bin/sh
+          args: -c "python -m pip install -r requirements.txt && nikola build && ghp-import -n -p -f -r origin -b gh-pages output"

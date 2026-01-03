@@ -2,14 +2,14 @@
 
 import time
 
-#v2
-#https://github.com/getnikola/plugins/tree/master/v8/github_widget
-
 # GitHub deployment configuration
-
 GITHUB_DEPLOY_BRANCH = 'gh-pages'
 GITHUB_SOURCE_BRANCH = 'main'
 GITHUB_REMOTE_NAME = 'origin'
+THEME = "paradigm-shift"
+EXTRA_THEMES_DIRS = ["."]
+
+
 
 # IMPORTANT:
 # False car le déploiement est géré par GitHub Actions
@@ -18,27 +18,41 @@ GITHUB_COMMIT_SOURCE = False
 # !! This is the configuration of Nikola. !! #
 # !!  You should edit it to your liking.  !! #
 
+# PLUGINS = "github_metadata"
+
+GITHUB_METADATA = {
+    "manual_repositories": [
+        {"full_name": "stephmnt/credit-scoring-mlops", "release_badge": True},
+        "stephmnt/datascience_portfolio",
+        "stephmnt/attrition_ESN",
+        {"full_name": "stephmnt/OCR_Projet05", "release_badge": True},
+        "stephmnt/training-relations-in-ai-applications",
+        "stephmnt/IATimeline",
+        ],
+    }
+
 
 # ! Some settings can be different in different languages.
 # ! A comment stating (translatable) is used to denote those.
 # ! There are two ways to specify a translatable setting:
 # ! (a) BLOG_TITLE = "My Blog"
-# ! (b) BLOG_TITLE = {"en": "My Blog", "es": "Mi Blog"}
+BLOG_TITLE = {"en": "Datascience Portfolio", "fr": "Datascience Portfolio"}
 # ! Option (a) is used when you don't want that setting translated.
 # ! Option (b) is used for settings that are different in different languages.
 
 
 # Data about this site
 BLOG_AUTHOR = "Stéphane Manet"  # (translatable)
-BLOG_TITLE = "Datascience Portfolio"  # (translatable)
+BLOG_BASELINE = {"en": "In short, I earned a master's degree in data science", "fr": "Bref, j'ai passé un master en data science"}  # (translatable)
+BLOG_IMAGE_URL = "https://manet-conseil.fr/media/images/avatar.original.jpg"  # (translatable)
 # This is the main URL for your site. It will be used
 # in a prominent link. Don't forget the protocol (http/https)!
-SITE_URL = "https://example.com/"
+SITE_URL = "https://stephmnt.github.io/datascience_portfolio/"
 # This is the URL where Nikola's output will be deployed.
 # If not set, defaults to SITE_URL
 # BASE_URL = "https://example.com/"
 BLOG_EMAIL = "stephane.manet@pm.me"
-BLOG_DESCRIPTION = "Le portfolio de tout mes projets data science"  # (translatable)
+BLOG_DESCRIPTION = "Le portfolio de tous mes projets data science"  # (translatable)
 
 # Nikola is multilingual!
 #
@@ -168,51 +182,27 @@ NAVIGATION_ALT_LINKS = {
     DEFAULT_LANG: ()
 }
 
-# Name of the theme to use.
-THEME = "bootblog4"
-
 # A theme color. In default themes, it might be displayed by some browsers as
 # the browser UI color (eg. Chrome on Android). Other themes might also use it
 # as an accent color (the default ones don’t). Must be a HEX value.
 THEME_COLOR = '#5670d4'
 
 # Theme configuration. Fully theme-dependent. (translatable)
-# Samples for bootblog4 (enabled) and bootstrap4 (commented) follow.
-# bootblog4 supports: featured_large featured_small featured_on_mobile
-#                     featured_large_image_on_mobile featured_strip_html sidebar
-# bootstrap4 supports: navbar_light (defaults to False)
-#                      navbar_custom_bg (defaults to '')
-
-# Config for bootblog4:
 THEME_CONFIG = {
-    DEFAULT_LANG: {
-        # Show the latest featured post in a large box, with the previewimage as its background.
-        'featured_large': False,
-        # Show the first (remaining) two featured posts in small boxes.
-        'featured_small': False,
-        # Show featured posts on mobile.
-        'featured_on_mobile': True,
-        # Show image in `featured_large` on mobile.
-        # `featured_small` displays them only on desktop.
-        'featured_large_image_on_mobile': True,
-        # Strip HTML from featured post text.
-        'featured_strip_html': False,
-        # Contents of the sidebar, If empty, the sidebar is not displayed.
-        'sidebar': ''
-    }
+    "fr": {
+        "blog_baseline": BLOG_BASELINE["fr"],
+        "blog_image_url": BLOG_IMAGE_URL,
+        "github_show_stars": False,
+        "github_show_forks": False,
+    },
+    "en": {
+        "blog_baseline": BLOG_BASELINE["en"],
+        "blog_image_url": BLOG_IMAGE_URL,
+        "github_show_stars": False,
+        "github_show_forks": False,
+    },
 }
-# Config for bootstrap4:
-# THEME_CONFIG = {
-#     DEFAULT_LANG: {
-#         # Use a light navbar with dark text. Defaults to False.
-#         'navbar_light': False,
-#         # Use a custom navbar color. If unset, 'navbar_light' sets text +
-#         # background color. If set, navbar_light controls only background
-#         # color. Supported values: bg-dark, bg-light, bg-primary, bg-secondary,
-#         # bg-success, bg-danger, bg-warning, bg-info, bg-white, bg-transparent.
-#         'navbar_custom_bg': '',
-#     }
-# }
+
 
 # POSTS and PAGES contains (wildcard, destination, template) tuples.
 # (translatable)
