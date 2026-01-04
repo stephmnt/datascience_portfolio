@@ -1,0 +1,4 @@
+Sitemap: https://stephmnt.github.io/datascience_portfolio/sitemapindex.xml
+
+User-Agent: *
+Host: stephmnt.github.io
