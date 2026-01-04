@@ -16,7 +16,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />
-		<link rel="stylesheet" href="/assets/css/main.css" />
+		<link rel="stylesheet" href="{{ site_url }}/assets/css/main.css" />
 		{% block extra_head %}{% endblock %}
 		{{ template_hooks['extra_head']() }}
 	</head>
@@ -25,20 +25,7 @@
 		<!-- Wrapper -->
 			<div id="wrapper">
 
-				<!-- Intro -->
-					<section class="intro">
-						<header>
-							<h1>{{ theme_config.get("blog_baseline", "")|e }}</h1>
-							<p>{{ blog_description|e }}</p>
-							<ul class="actions">
-								<li><a href="#first" class="arrow scrolly"><span class="label">Suivant</span></a></li>
-							</ul>
-						</header>
-						<div class="content">
-							{% set image_url = theme_config.get("blog_image_url", "") %}
-							<span class="image fill" data-position="center"><img src="{{ image_url|e }}" alt="{{ blog_author|e }}" /></span>
-						</div>
-					</section>
+
 {% block content %}
 {% block center_section %}
 <!-- Section -->
@@ -65,20 +52,45 @@
 							<h2>Restons en contact</h2>
 						</header>
 						<div class="content">
-							<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever</p>
+							{% set footer_cta_text = theme_config.get("footer_cta_text") if theme_config is defined else None %}
+							{% set footer_cta_buttons = theme_config.get("footer_cta_buttons", []) if theme_config is defined else [] %}
+							{% if footer_cta_text %}
+							<p>{{ footer_cta_text|e }}</p>
+							{% endif %}
+							{% if footer_cta_buttons %}
+							<ul class="actions">
+								{% for button in footer_cta_buttons %}
+									{% if button.text and button.link %}
+									<li>
+										<a href="{{ button.link|e }}" class="button {% if loop.first %}primary {% endif %}large">{{ button.text|e }}</a>
+									</li>
+									{% endif %}
+								{% endfor %}
+							</ul>
+							{% endif %}
 						</div>
 						<footer>
 							<ul class="items">
 								<li>
 									<h3>Email</h3>
-									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+									<a href="mailto:{{ blog_email }}">{{ blog_email }}</a>
 								</li>
 								<li>
 									<h3>Réseaux sociaux</h3>
+									{% set social_links = theme_config.get("social_links", []) if theme_config is defined else [] %}
+									{% if social_links %}
 									<ul class="icons">
-										<li><a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin"><span class="label"></span></a></li>
-										<li><a href="https://www.github.com/stephmnt" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
+										{% for item in social_links %}
+											{% if item.url and item.icon %}
+											<li>
+												<a href="{{ item.url|e }}" target="_blank" rel="noopener noreferrer" class="icon brands fa-{{ item.icon|e }}">
+													<span class="label">{{ item.name|e }}</span>
+												</a>
+											</li>
+											{% endif %}
+										{% endfor %}
 									</ul>
+									{% endif %}
 								</li>
 							</ul>
 						</footer>
@@ -86,17 +98,17 @@
 					
 				<!-- Copyright -->
 				
-					<div class="copyright">&copy; Untitled. All rights reserved. A free responsive site template designed by <a href="https://twitter.com/ajlkn">@ajlkn</a> / <a href="https://html5up.net">HTML5 UP</a>.</div>
+					<div class="copyright">&copy; 2026. All rights reserved. A free responsive site template designed by <a href="https://twitter.com/ajlkn">@ajlkn</a> / <a href="https://html5up.net">HTML5 UP</a>.</div>
 
 			</div>
 
 		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.scrolly.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
+			<script src="{{ site_url }}/assets/js/jquery.min.js"></script>
+			<script src="{{ site_url }}/assets/js/jquery.scrolly.min.js"></script>
+			<script src="{{ site_url }}/assets/js/browser.min.js"></script>
+			<script src="{{ site_url }}/assets/js/breakpoints.min.js"></script>
+			<script src="{{ site_url }}/assets/js/util.js"></script>
+			<script src="{{ site_url }}/assets/js/main.js"></script>
 			<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 			<script>
 			mermaid.initialize({ startOnLoad: true });

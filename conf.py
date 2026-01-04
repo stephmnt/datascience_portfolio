@@ -23,11 +23,11 @@ GITHUB_COMMIT_SOURCE = False
 GITHUB_METADATA = {
     "manual_repositories": [
         {"full_name": "stephmnt/credit-scoring-mlops", "release_badge": True, "created_at_badge": True},
-        "stephmnt/datascience_portfolio",
-        "stephmnt/attrition_ESN",
+        {"full_name": "stephmnt/datascience_portfolio", "release_badge": False, "created_at_badge": True},
+        {"full_name": "stephmnt/attrition_ESN", "release_badge": False, "created_at_badge": True},
         {"full_name": "stephmnt/OCR_Projet05", "release_badge": True, "created_at_badge": True},
-        "stephmnt/training-relations-in-ai-applications",
-        "stephmnt/IATimeline",
+        {"full_name": "stephmnt/training-relations-in-ai-applications", "release_badge": False, "created_at_badge": True},
+        {"full_name": "stephmnt/IATimeline", "release_badge": False, "created_at_badge": True},
         ],
     }
 
@@ -47,7 +47,8 @@ BLOG_BASELINE = {"en": "In short, I earned a master's degree in data science", "
 BLOG_IMAGE_URL = "https://manet-conseil.fr/media/images/avatar.original.jpg"  # (translatable)
 # This is the main URL for your site. It will be used
 # in a prominent link. Don't forget the protocol (http/https)!
-SITE_URL = "https://stephmnt.github.io/datascience_portfolio/"
+SITE_URL = "http://localhost:8000/"
+# SITE_URL = "https://stephmnt.github.io/datascience_portfolio/"
 # This is the URL where Nikola's output will be deployed.
 # If not set, defaults to SITE_URL
 # BASE_URL = "https://example.com/"
@@ -194,12 +195,46 @@ THEME_CONFIG = {
         "blog_image_url": BLOG_IMAGE_URL,
         "github_show_stars": False,
         "github_show_forks": False,
+        "footer_cta_text": "Des projets data concrets, expliqués clairement, avec le code et les résultats disponibles.",
+        "footer_cta_buttons": [
+            {"text": "Voir le portfolio", "link": "/posts/portfolio/"},
+            {"text": "Me contacter", "link": f"mailto:{BLOG_EMAIL}"},
+        ],
+        "social_links": [
+            {
+                "name": "LinkedIn",
+                "url": "https://www.linkedin.com/in/stephanemanet",
+                "icon": "linkedin",
+            },
+            {
+                "name": "GitHub",
+                "url": "https://www.github.com/stephmnt",
+                "icon": "github",
+            },
+        ],
     },
     "en": {
         "blog_baseline": BLOG_BASELINE["en"],
         "blog_image_url": BLOG_IMAGE_URL,
         "github_show_stars": False,
         "github_show_forks": False,
+        "footer_cta_text": "Concrete data projects, clearly explained, with code and results available.",
+        "footer_cta_buttons": [
+            {"text": "View portfolio", "link": "/posts/portfolio/"},
+            {"text": "Contact me", "link": f"mailto:{BLOG_EMAIL}"},
+        ],
+        "social_links": [
+            {
+                "name": "LinkedIn",
+                "url": "https://www.linkedin.com/in/stephanemanet",
+                "icon": "linkedin",
+            },
+            {
+                "name": "GitHub",
+                "url": "https://www.github.com/stephmnt",
+                "icon": "github",
+            },
+        ],
     },
 }
 

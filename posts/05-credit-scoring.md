@@ -1,7 +1,8 @@
 <!--
-.. title: credit scoring MLOps
-.. slug: projet-1
-.. date: 2026-01-01 00:00:00
+.. title: Credit scoring
+.. slug: credit-scoring
+.. description: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+.. date: 2026-01-01 00:00:01
 -->
 
 ### Introduction
@@ -132,13 +133,3 @@ Les prochaines étapes sont clairement identifiées :
 * amélioration éventuelle de la calibration des probabilités,
 * enrichissement des dashboards avec des segments métier,
 * et, à terme, une approche champion/challenger pour faire évoluer le scoring sans risque.
-
-Merci pour votre attention, je suis prêt à répondre à vos questions.
-
----
-
-Si tu veux, je peux aussi :
-
-* **réduire à 5 minutes** (version ultra-synthèse),
-* **ajouter des phrases “anti-questions pièges”** pour le jury,
-* ou **adapter le discours à ton profil exact** (data scientist / ML engineer / product data).

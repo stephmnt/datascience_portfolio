@@ -1,15 +1,28 @@
 {% extends 'base.tmpl' %}
 {% block center_section %}
-{% set type_templates = {
-    'post_list': 'post_list.tmpl',
-    'cta': 'post_cta.tmpl',
-    'post_cta': 'post_cta.tmpl',
-    'gallery': 'post_gallery.tmpl',
-} %}
+				<!-- Intro -->
+					<section class="intro">
+						<header>
+							<h1>{{ theme_config.get("blog_baseline", "")|e }}</h1>
+							<p>{{ blog_description|e }}</p>
+							<ul class="actions">
+								<li><a href="#first" class="arrow scrolly"><span class="label">Suivant</span></a></li>
+							</ul>
+						</header>
+						<div class="content">
+							{% set image_url = theme_config.get("blog_image_url", "") %}
+							<span class="image fill" data-position="center"><img src="{{ image_url|e }}" alt="{{ blog_author|e }}" /></span>
+						</div>
+					</section>
 {% for post in posts|reverse %}
 <!-- Section -->
 <section{% if (loop is defined and loop.first) or (loop is not defined) %} id="first"{% endif %}>
-        {% set post_template = post.meta('template') or type_templates.get(post.meta('type'), 'post.tmpl') %}
+        {% set template_override = post.meta('template') %}
+        {% if template_override == 'post_gh.tmpl' %}
+            {% set post_template = 'post_gh_fragment.tmpl' %}
+        {% else %}
+            {% set post_template = 'post_fragment.tmpl' %}
+        {% endif %}
         {% include post_template %}
 </section>
 {% endfor %}
