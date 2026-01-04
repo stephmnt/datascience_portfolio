@@ -47,8 +47,8 @@ BLOG_BASELINE = {"en": "In short, I earned a master's degree in data science", "
 BLOG_IMAGE_URL = "https://manet-conseil.fr/media/images/avatar.original.jpg"  # (translatable)
 # This is the main URL for your site. It will be used
 # in a prominent link. Don't forget the protocol (http/https)!
-SITE_URL = "http://localhost:8000/"
-# SITE_URL = "https://stephmnt.github.io/datascience_portfolio/"
+# SITE_URL = "http://localhost:8000/"
+SITE_URL = "https://stephmnt.github.io/datascience_portfolio/"
 # This is the URL where Nikola's output will be deployed.
 # If not set, defaults to SITE_URL
 # BASE_URL = "https://example.com/"
