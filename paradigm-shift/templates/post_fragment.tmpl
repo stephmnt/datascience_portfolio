@@ -11,8 +11,9 @@
         <p>{{ description|e }}</p>
         <ul class="actions">
             <li>
-                <a href="{{ post.permalink()|e }}" class="button primary large">Lire la suite</a>
+                <a href="{{ post.permalink()|e }}" class="button primary large">{{ messages("Read more") }}</a>
             </li>
+        </ul>
         </ul>
     {% else %}
         {{ post.text(teaser_only=False) }}

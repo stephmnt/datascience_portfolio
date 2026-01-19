@@ -2,7 +2,7 @@
 
 ## 0. Prompt
 
-Reprend les élélments du projet et synthétise-les dans un rapport de conduite de projet en t'appuyant sur le template template_projet.md. Assure-toi de garder un niveau de langage clair et accessible et réapproprie-toi le projet pour le présenter sous la forme d'un storytelling.
+Reprend les éléments du projet et synthétise-les dans un rapport de conduite de projet en t'appuyant sur le template template_projet.md. Assure-toi de garder un niveau de langage clair et accessible et réapproprie-toi le projet pour le présenter sous la forme d'un storytelling.
 
 ## 1. Contexte et analyse des besoins
 

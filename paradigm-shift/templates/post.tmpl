@@ -6,12 +6,12 @@
 						<header>
 							<h1>{{ post.title()|e }}</h1>
 							<ul class="actions">
-								<li><a href="#first" class="arrow scrolly"><span class="label">Suivant</span></a></li>
                                 <li>
-                                    <a href="{{ rel_link(post.permalink(), '/')|e }}" class="icon solid fa-home" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
-                                        <span class="label">Retour accueil</span>
+                                    <a href="{{ rel_link(post.permalink(), '/')|e }}" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+                                        <span class="label">{{ messages("Back to home") }}</span>
                                     </a>
                                 </li>
+								<li><a href="#first" class="arrow scrolly"><span class="label">{{ messages("Next") }}</span></a></li>
 							</ul>
 						</header>
 						<div class="content">

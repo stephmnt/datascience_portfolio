@@ -1,7 +1,3 @@
-https://html5up.net/strata -> le plus simple, plus pratique
-https://html5up.net/miniport
-https://html5up.net/paradigm-shift -> préféré de Marharyta
-
 # Datascience Portfolio (Nikola)
 
 Ce dépôt contient le code source du site statique généré avec Nikola.

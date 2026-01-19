@@ -1,7 +1,7 @@
 <!--
 .. title: Portfolio
 .. slug: portfolio
-.. date: 2025-12-31 00:00:00
+.. date: 2025-09-01 00:00:03
 .. template: post_gh.tmpl
 -->
 

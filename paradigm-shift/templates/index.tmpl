@@ -6,11 +6,11 @@
 							<h1>{{ theme_config.get("blog_baseline", "")|e }}</h1>
 							<p>{{ blog_description|e }}</p>
 							<ul class="actions">
-								<li><a href="#first" class="arrow scrolly"><span class="label">Suivant</span></a></li>
+							<li><a href="#first" class="arrow scrolly"><span class="label">{{ messages("Next") }}</span></a></li>
 							</ul>
 						</header>
 						<div class="content">
-							{% set image_url = theme_config.get("blog_image_url", "") %}
+							{% set image_url = theme_config.get("blog_image_url") if theme_config is defined else None %}
 							<span class="image fill" data-position="center"><img src="{{ image_url|e }}" alt="{{ blog_author|e }}" /></span>
 						</div>
 					</section>
