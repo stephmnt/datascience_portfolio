@@ -1,7 +1,7 @@
 <!--
 .. title: Credit scoring
 .. slug: credit-scoring
-.. description: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+.. description: Réduire les risques liés aux prêts bancaires en prédisant la probabilité des défauts de de paiement.
 .. date: 2026-01-01 00:00:01
 -->
 

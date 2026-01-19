@@ -1,7 +1,7 @@
 <!--
 .. title: Attrition ESN
 .. slug: attrition-esn
-.. description: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+.. description: Fidéliser les collaborateurs en détectant les risques de départs.
 .. date: 2025-11-01 00:00:01
 -->
 
