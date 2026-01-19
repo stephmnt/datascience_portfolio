@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="../assets/xml/rss.xsl" media="all"?><rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Datascience Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/</link><description>Le portfolio de tous mes projets data science</description><atom:link href="https://stephmnt.github.io/datascience_portfolio/en/rss.xml" rel="self" type="application/rss+xml"></atom:link><language>en</language><copyright>Contents © 2026 &lt;a href="mailto:stephane.manet@pm.me"&gt;Stéphane Manet&lt;/a&gt; </copyright><lastBuildDate>Mon, 19 Jan 2026 17:48:18 GMT</lastBuildDate><generator>Nikola (getnikola.com)</generator><docs>http://blogs.law.harvard.edu/tech/rss</docs><item><title>Credit scoring</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/credit-scoring/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h4&gt;Introduction&lt;/h4&gt;
+&lt;p&gt;L’objectif n’était pas seulement d’obtenir de bonnes performances statistiques, mais de livrer un &lt;strong&gt;système de décision fiable, explicable, industrialisé et monitoré&lt;/strong&gt;, capable de répondre aux enjeux du crédit à la consommation.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Contexte et problématique métier&lt;/h4&gt;
+&lt;p&gt;Le projet démarre dans un contexte de forte pression opérationnelle.
+Chez &lt;em&gt;Prêt à Dépenser&lt;/em&gt;, l’équipe &lt;strong&gt;Credit Express&lt;/strong&gt; cherche à réduire au maximum le temps de décision pour l’octroi de crédit. En parallèle, la direction des risques est confrontée à une augmentation des impayés.&lt;/p&gt;
+&lt;p&gt;On se retrouve donc face à une tension classique :
+&lt;strong&gt;aller vite&lt;/strong&gt;, sans &lt;strong&gt;augmenter le risque&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Mon rôle a été de trouver un équilibre entre ces deux exigences, en tenant compte de contraintes fortes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;des données déséquilibrées,&lt;/li&gt;
+&lt;li&gt;des obligations de transparence et d’explicabilité,&lt;/li&gt;
+&lt;li&gt;et un besoin de mise en production rapide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le besoin métier est alors clairement formulé : produire un score de probabilité de défaut, associé à une décision d’octroi, explicable et utilisable en production, avec un suivi dans le temps.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;État initial et diagnostic&lt;/h4&gt;
+&lt;p&gt;Lorsque j’analyse l’existant, je constate qu’il n’y a pas encore de solution en production.
+En revanche, il existe une base de travail solide : des notebooks de modélisation, des datasets riches issus de plusieurs sources, et un premier travail de feature engineering déjà aligné avec la logique métier.&lt;/p&gt;
+&lt;p&gt;Le problème n’est donc pas la qualité de l’exploration, mais le &lt;strong&gt;passage à l’échelle&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Plusieurs écarts majeurs apparaissent :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pas d’API stable pour exposer le modèle,&lt;/li&gt;
+&lt;li&gt;pas de contrat de données clair,&lt;/li&gt;
+&lt;li&gt;pas de monitoring en production,&lt;/li&gt;
+&lt;li&gt;et une traçabilité incomplète malgré l’usage de MLflow.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;À ce stade, la solution est techniquement intéressante, mais &lt;strong&gt;non exploitable par le métier&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Choix de la solution cible&lt;/h4&gt;
+&lt;p&gt;La solution cible que je propose repose sur un principe simple :
+&lt;strong&gt;faire moins, mais mieux, et surtout durablement&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Côté modélisation, je privilégie des modèles tabulaires robustes, bien adaptés aux données de crédit. Ils offrent un bon compromis entre performance, stabilité et explicabilité.
+L’objectif n’est pas de maximiser un score abstrait, mais de maîtriser le coût métier, notamment en pénalisant fortement les faux négatifs.&lt;/p&gt;
+&lt;p&gt;L’explicabilité est intégrée dès la conception, à deux niveaux :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;globale, pour comprendre les facteurs de risque dominants,&lt;/li&gt;
+&lt;li&gt;locale, pour justifier une décision sur un dossier précis.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Côté industrialisation, l’architecture s’articule autour de briques simples et open source :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MLflow pour le suivi des expériences et des versions,&lt;/li&gt;
+&lt;li&gt;une API FastAPI pour le scoring,&lt;/li&gt;
+&lt;li&gt;Docker et CI/CD pour un déploiement reproductible,&lt;/li&gt;
+&lt;li&gt;et un système de logs structuré alimentant le monitoring.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le modèle devient ainsi un &lt;strong&gt;service&lt;/strong&gt;, et non plus un simple fichier de sortie de notebook.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Cas d’usage et valeur métier&lt;/h4&gt;
+&lt;p&gt;Quatre cas d’usage principaux sont priorisés.&lt;/p&gt;
+&lt;p&gt;D’abord, le scoring standard, exposé via une API, utilisé directement dans le parcours d’octroi.
+Ensuite, un scoring minimal, avec un nombre réduit de variables, pour des parcours rapides.
+Troisièmement, l’explicabilité locale, essentielle pour les analystes crédit et la conformité.
+Enfin, le monitoring continu, pour détecter les dérives de données ou de performance avant qu’elles n’impactent le métier.&lt;/p&gt;
+&lt;p&gt;Cette approche permet une adoption progressive par les équipes, tout en sécurisant la production.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Démarche projet et pilotage&lt;/h4&gt;
+&lt;p&gt;Sur le plan méthodologique, je m’appuie sur une démarche inspirée de CRISP-DM, mais exécutée de façon agile.&lt;/p&gt;
+&lt;p&gt;Le projet est découpé en phases courtes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;cadrage métier et exploration des données,&lt;/li&gt;
+&lt;li&gt;préparation et modélisation avec sélection d’un seuil métier,&lt;/li&gt;
+&lt;li&gt;industrialisation et tests,&lt;/li&gt;
+&lt;li&gt;mise en place du monitoring,&lt;/li&gt;
+&lt;li&gt;puis optimisation et sécurisation des performances.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les décisions sont systématiquement appuyées par des indicateurs clairs.
+Côté business : taux d’acceptation, pertes nettes, délai de décision.
+Côté machine learning : AUC, recall, score custom, calibration.
+Côté opérations : latence, taux d’erreur, qualité des logs.&lt;/p&gt;
+&lt;p&gt;Ces KPI servent de langage commun entre le métier, la data et l’IT.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Suivi, monitoring et maîtrise du risque&lt;/h4&gt;
+&lt;p&gt;Un point clé du projet est le suivi post-déploiement.
+Chaque prédiction génère des traces exploitables : distributions de scores, dérive des features, performance dans le temps.&lt;/p&gt;
+&lt;p&gt;Un tableau de bord permet de surveiller :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;le drift des données,&lt;/li&gt;
+&lt;li&gt;la stabilité des scores,&lt;/li&gt;
+&lt;li&gt;et les performances opérationnelles de l’API.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Un runbook est également défini pour guider les équipes en cas d’incident : identifier rapidement si le problème vient des données, du modèle ou de l’infrastructure.&lt;/p&gt;
+&lt;p&gt;On passe ainsi d’un modèle “boîte noire” à un &lt;strong&gt;système maîtrisé et observable&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Conclusion et perspectives&lt;/h4&gt;
+&lt;p&gt;Pour conclure, ce projet illustre le passage d’un besoin métier critique à une solution MLOps complète et exploitable.
+Le modèle n’est pas seulement performant : il est &lt;strong&gt;aligné avec les enjeux économiques&lt;/strong&gt;, explicable, industrialisé et surveillé dans le temps.&lt;/p&gt;
+&lt;p&gt;Les prochaines étapes sont clairement identifiées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;mise en place de retrainings périodiques,&lt;/li&gt;
+&lt;li&gt;amélioration éventuelle de la calibration des probabilités,&lt;/li&gt;
+&lt;li&gt;enrichissement des dashboards avec des segments métier,&lt;/li&gt;
+&lt;li&gt;et, à terme, une approche champion/challenger pour faire évoluer le scoring sans risque.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/credit-scoring/</guid><pubDate>Wed, 31 Dec 2025 23:00:01 GMT</pubDate></item><item><title>Attrition ESN</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/attrition-esn/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation (organisation et / ou contexte)&lt;/h4&gt;
+&lt;p&gt;Quand j'ai pris le projet en main, le constat était simple : la DRH disposait de trois exports de données (SIRH, évaluations, sondage interne) mais pas d'un outil fiable pour anticiper les départs. L'enjeu n'était pas seulement de produire un score, mais de créer un cadre de décision clair et traçable pour accompagner les managers.&lt;/p&gt;
+&lt;p&gt;Le contexte technique était favorable : une stack Python déjà choisie, la possibilité d'utiliser PostgreSQL, et un besoin de démonstration rapide (soutenance, déploiement léger sur Hugging Face). La maturité data est intermédiaire : données structurées et riches, mais pipeline et supervision encore à bâtir.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Je me suis d'abord aligné avec les parties prenantes clés : RH (utilisateurs finaux), managers (bénéficiaires des alertes), data/IT (industrialisation), et conformité (RGPD, biais).&lt;/p&gt;
+&lt;p&gt;Le recueil s'est fait à partir des livrables existants du projet et de l'analyse du dépôt :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;compréhension des données brutes (3 fichiers CSV) et de leur usage ;&lt;/li&gt;
+&lt;li&gt;analyse de la documentation et des choix techniques ;&lt;/li&gt;
+&lt;li&gt;revue des modules clés (&lt;code&gt;main.py&lt;/code&gt;, &lt;code&gt;app.py&lt;/code&gt;, &lt;code&gt;projet_05/dataset.py&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les besoins ont été hiérarchisés autour de trois priorités :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;fiabiliser la fusion des sources et la préparation des données ;&lt;/li&gt;
+&lt;li&gt;fournir un score de risque compréhensible avec un seuil de décision ajustable ;&lt;/li&gt;
+&lt;li&gt;garantir la traçabilité des prédictions (journalisation).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Contraintes majeures :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;disponibilité d'une base PostgreSQL en local, mais non sur Hugging Face (nécessité d'un fallback pandas) ;&lt;/li&gt;
+&lt;li&gt;exigences de confidentialité et d'audit (journalisation des décisions) ;&lt;/li&gt;
+&lt;li&gt;temps et budget limités pour une démonstration fonctionnelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée si absence de solution existante)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;L'absence de solution existante a conduit à proposer une architecture pragmatique, modulaire et orientée démonstration :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ingestion des trois sources via &lt;code&gt;scripts/init_db.py&lt;/code&gt; vers PostgreSQL ;&lt;/li&gt;
+&lt;li&gt;préparation et fusion dans &lt;code&gt;projet_05/dataset.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;feature engineering + entraînement via &lt;code&gt;projet_05/features.py&lt;/code&gt; et &lt;code&gt;projet_05/modeling/train.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;modèle sérialisé dans &lt;code&gt;models/best_model.joblib&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio dans &lt;code&gt;app.py&lt;/code&gt; avec onglets Formulaire, Tableau, CSV et données brutes ;&lt;/li&gt;
+&lt;li&gt;journalisation des prédictions dans &lt;code&gt;prediction_logs&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Flux simplifié :&lt;/p&gt;
+&lt;div class="code"&gt;&lt;pre class="code literal-block"&gt;&lt;span class="kr"&gt;CSV&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;bruts&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;PostgreSQL&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;preparation&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nf"&gt;merge&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;features&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;entrainement&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;modele&lt;/span&gt;
+&lt;span class="w"&gt;                                 &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt;                                     &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+&lt;span class="w"&gt;                                 &lt;/span&gt;&lt;span class="o"&gt;+-----------------&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;Gradio&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;lt;----------+&lt;/span&gt;
+&lt;span class="w"&gt;                                                  &lt;/span&gt;&lt;span class="n"&gt;logs&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;predictions&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4&gt;2.2 Évaluation de l'adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;Critères d'analyse :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;performance : inference rapide sur données tabulaires, pipeline de training séparé ;&lt;/li&gt;
+&lt;li&gt;scalabilité : suffisante pour un POC, limite pour des volumes massifs ;&lt;/li&gt;
+&lt;li&gt;coût : stack open source, déploiement léger ;&lt;/li&gt;
+&lt;li&gt;pertinence métier : score explicite, seuil ajustable, logs d'audit.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Écarts et limites identifiés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;dépendance à PostgreSQL pour le suivi fin ; sur Hugging Face, la journalisation est limitée ;&lt;/li&gt;
+&lt;li&gt;couverture de tests partielle (zones non couvertes en modeling et explainability) ;&lt;/li&gt;
+&lt;li&gt;absence d'un module d'explicabilité pleinement exploité dans la démonstration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. Identification d'une solution technique cible&lt;/h3&gt;
+&lt;p&gt;Comparatif d'approches techniques :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;règles métiers simples : rapide, mais faible précision et faible adaptabilité ;&lt;/li&gt;
+&lt;li&gt;ML classique sur données tabulaires (scikit-learn) : meilleur compromis qualité/complexité ;&lt;/li&gt;
+&lt;li&gt;architectures plus lourdes (deep learning, MLOps avancé) : surdimensionnées pour le besoin actuel.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La solution cible retient un ML classique avec une couche de pilotage légère :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour l'intégrité et la traçabilité ;&lt;/li&gt;
+&lt;li&gt;pipeline Python orchestré par &lt;code&gt;main.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio pour un usage immédiat ;&lt;/li&gt;
+&lt;li&gt;CI/CD GitHub Actions pour la reproductibilité.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Facteurs clés de succès :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;qualité et cohérence des trois sources ;&lt;/li&gt;
+&lt;li&gt;choix d'un seuil métier validé avec les RH ;&lt;/li&gt;
+&lt;li&gt;adoption par les équipes via une interface simple ;&lt;/li&gt;
+&lt;li&gt;traçabilité des décisions pour audit et amélioration continue.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Cas d'usage priorisés :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;scoring individuel via formulaire (usage quotidien RH) ;&lt;/li&gt;
+&lt;li&gt;scoring en lot via CSV (campagnes d'analyse) ;&lt;/li&gt;
+&lt;li&gt;monitoring des prédictions et des tendances (pilotage).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;J'ai structuré la démarche en étapes lisibles :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;cadrage et compréhension des données ;&lt;/li&gt;
+&lt;li&gt;construction de la base et du pipeline de préparation ;&lt;/li&gt;
+&lt;li&gt;entraînement et évaluation du modèle ;&lt;/li&gt;
+&lt;li&gt;packaging et interface Gradio ;&lt;/li&gt;
+&lt;li&gt;déploiement, tests et documentation.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Méthodologie : une approche CRISP-DM avec itérations courtes (prototypage rapide, validation métier, itération).&lt;/p&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Risques et opportunités :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;opportunité : visibilité RH immédiate sur les risques de départ ;&lt;/li&gt;
+&lt;li&gt;risque : biais potentiels et perception RH (nécessité de transparence) ;&lt;/li&gt;
+&lt;li&gt;risque : dépendance aux données d'entrée, qualité variable des sources.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Scénarios budgétaires :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;scénario léger : stack open source locale + déploiement HF ;&lt;/li&gt;
+&lt;li&gt;scénario renforcé : base managée + monitoring avancé + gouvernance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;KPIs proposés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;taux d'utilisation de l'outil par les RH ;&lt;/li&gt;
+&lt;li&gt;précision des alertes (taux de faux positifs / faux négatifs) ;&lt;/li&gt;
+&lt;li&gt;délai de mise à jour des modèles ;&lt;/li&gt;
+&lt;li&gt;volume et qualité des logs de prédiction.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Impacts pris en compte :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;éthique et conformité (RGPD, minimisation des données, explicabilité) ;&lt;/li&gt;
+&lt;li&gt;organisationnel (processus RH de suivi des alertes) ;&lt;/li&gt;
+&lt;li&gt;business (coût de l'attrition vs coût de l'intervention).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Indicateurs de suivi :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;avancement des livrables (pipeline, modèle, app, doc) ;&lt;/li&gt;
+&lt;li&gt;qualité et fraîcheur des données ;&lt;/li&gt;
+&lt;li&gt;performance du modèle et répartition des scores ;&lt;/li&gt;
+&lt;li&gt;volume de prédictions par source (formulaire, CSV, bruts).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Reporting recommandé :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;hebdomadaire pour l'équipe projet ;&lt;/li&gt;
+&lt;li&gt;mensuel pour le comité de pilotage RH/DSI.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;logs d'exécution &lt;code&gt;logs/pipeline_logs&lt;/code&gt; et &lt;code&gt;logs/tests_logs&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;journal des prédictions en base (&lt;code&gt;prediction_logs&lt;/code&gt;) ;&lt;/li&gt;
+&lt;li&gt;tests automatisés via Pytest ;&lt;/li&gt;
+&lt;li&gt;documentation continue via MkDocs.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;p&gt;Ce projet part d'un besoin RH concret et aboutit à une solution opérationnelle : un pipeline data robuste, un modèle ML adapté aux données tabulaires et une interface accessible pour les équipes. Le tout est documenté et déployable rapidement.&lt;/p&gt;
+&lt;p&gt;Décisions structurantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour la fiabilité et l'audit ;&lt;/li&gt;
+&lt;li&gt;scikit-learn pour un ML lisible et efficace ;&lt;/li&gt;
+&lt;li&gt;Gradio pour une adoption rapide et une démonstration fluide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Prochaines étapes recommandées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;renforcer la couverture de tests et l'explicabilité ;&lt;/li&gt;
+&lt;li&gt;automatiser un monitoring de drift ;&lt;/li&gt;
+&lt;li&gt;préparer une version intégrable dans le SI RH.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/attrition-esn/</guid><pubDate>Fri, 31 Oct 2025 23:00:01 GMT</pubDate></item><item><title>Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/portfolio/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Découvrez mes projets de data science et machine learning sur Github ici, ou poursuivez la navigation pour voir les rapports de projet.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/portfolio/</guid><pubDate>Sun, 31 Aug 2025 22:00:03 GMT</pubDate></item><item><title>Un nouveau départ</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/nouveau-depart/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Pendant plusieurs années, j’ai accompagné des organisations dans leur transformation digitale. Mon fil conducteur, c’était toujours le même : partir d’un besoin métier, définir des indicateurs, piloter un projet et rendre les résultats lisibles pour décider.&lt;/p&gt;
+&lt;p&gt;À force, j’ai eu envie d’aller au-delà du constat et du reporting : utiliser la donnée pour anticiper, automatiser et produire de vraies solutions. C’est ce qui m’a amené à me reconvertir via un Master Data Scientist Machine Learning.&lt;/p&gt;
+&lt;p&gt;Aujourd’hui, je sais couvrir la chaîne complète : préparation et analyse des données, modélisation ML et deep learning, et surtout passage en production avec API, cloud et bonnes pratiques MLOps comme le monitoring et le drift. Et je garde un vrai plus issu de mon parcours : le cadrage, la gestion de projet et la pédagogie — je sais faire le lien entre équipes métier et technique et livrer quelque chose d’utilisable. Mon objectif, c’est de construire des produits data robustes, mesurables et utiles.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+mindmap
+  root((Data Scientist - ML))
+    Analyse de données
+      Transformer des données brutes en dataset exploitable&lt;br&gt;Nettoyage, jointures, features, analyses exploratoires&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Modeling
+      Modèles supervisés pour prédire ou classer&lt;br&gt;Train validation, choix des métriques, optimisation&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Deep learning
+      Réseaux de neurones pour classification&lt;br&gt;Appliqué à des données complexes comme images ou texte&lt;br&gt;Projets: Image classification"
+    NLP et IA génératives
+      "Construire des systemes basés sur LLM&lt;br&gt;RAG pour retrouver des sources puis générer une réponse, et évaluation LLM&lt;br&gt;Projets: RAG LangChain Mistral Faiss, LLM evaluation"
+    MLOps et déploiement
+      Passer du notebook à un service utilisable&lt;br&gt;API, cloud, versioning, CI CD, monitoring et drift&lt;br&gt;Projets: ML model deployment API, Monitoring drift"
+    Compétences transférables
+      Ancien consultant en transformation digitale, j'apporte de compétences utiles en data science dans ce nouveau projet :&lt;br&gt;Cadrage besoin, KPI, gestion de projet, communication et storytelling&lt;br&gt;Projets: AI project framing et restitution sur tous les projets
+&lt;/div&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/nouveau-depart/</guid><pubDate>Sun, 31 Aug 2025 22:00:02 GMT</pubDate></item><item><title>À propos de ce portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/a-propos/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Ce portfolio présente une sélection de mes projets en science des données, mettant en avant mes compétences en analyse de données, modélisation prédictive et visualisation. Chaque projet illustre une approche méthodologique rigoureuse et l'utilisation d'outils modernes pour résoudre des problèmes réels.&lt;/p&gt;
+&lt;p&gt;Il a été réalisé dans le cadre de &lt;a href="https://openclassrooms.com/fr/paths/1047-data-scientist-machine-learning"&gt;ma formation en Data Science avec OpenClassRooms&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;J'ai utilisé le générateur de site statique &lt;a href="https://getnikola.com/"&gt;Nikola&lt;/a&gt; pour créer ce portfolio, ce qui m'a permis de personnaliser le design et d'organiser efficacement le contenu. Je me suis appuyé sur le thème "&lt;a href="https://html5up.net/"&gt;Paradigm Shift&lt;/a&gt;" que j'ai adapté au format Nikola. Pour les besoins de présentation du portfolio, j'ai développé deux plugins, l'un pour intégrer les repos GitHub des projets, et l'autre pour rendre les diagrammes Mermaid compatibles avec les shortcodes Nikola.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/a-propos/</guid><pubDate>Sun, 31 Aug 2025 22:00:01 GMT</pubDate></item></channel></rss>
