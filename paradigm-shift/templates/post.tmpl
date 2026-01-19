@@ -3,15 +3,17 @@
 {% block center_section %}
 				<!-- Intro -->
 					<section class="intro">
+						{% set back_to_home_label = theme_config.get("back_to_home_label", "Back to home") if theme_config is defined else "Back to home" %}
+						{% set next_label = theme_config.get("next_label", "Next") if theme_config is defined else "Next" %}
 						<header>
 							<h1>{{ post.title()|e }}</h1>
 							<ul class="actions">
                                 <li>
                                     <a href="{{ rel_link(post.permalink(), '/')|e }}" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
-                                        <span class="label">{{ messages("Back to home") }}</span>
+                                        <span class="label">{{ back_to_home_label|e }}</span>
                                     </a>
                                 </li>
-								<li><a href="#first" class="arrow scrolly"><span class="label">{{ messages("Next") }}</span></a></li>
+								<li><a href="#first" class="arrow scrolly"><span class="label">{{ next_label|e }}</span></a></li>
 							</ul>
 						</header>
 						<div class="content">

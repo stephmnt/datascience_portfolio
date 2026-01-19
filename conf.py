@@ -195,6 +195,8 @@ THEME_CONFIG = {
         "blog_image_url": BLOG_IMAGE_URL,
         "github_show_stars": False,
         "github_show_forks": False,
+        "back_to_home_label": "Retour accueil",
+        "next_label": "Suivant",
         "footer_cta_text": "Des projets data concrets, expliqués clairement, avec le code et les résultats disponibles.",
         "footer_cta_buttons": [
             {"text": "Voir le portfolio", "link": "/posts/portfolio/"},
@@ -218,6 +220,8 @@ THEME_CONFIG = {
         "blog_image_url": BLOG_IMAGE_URL,
         "github_show_stars": False,
         "github_show_forks": False,
+        "back_to_home_label": "Back to home",
+        "next_label": "Next",
         "footer_cta_text": "Concrete data projects, clearly explained, with code and results available.",
         "footer_cta_buttons": [
             {"text": "View portfolio", "link": "/posts/portfolio/"},
