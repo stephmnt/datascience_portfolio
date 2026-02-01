@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Attrition ESN | Datascience Portfolio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+				<!-- Intro -->
+					<section class="intro"><header><h1>Attrition ESN</h1>
+							<ul class="actions">
+<li>
+                                    <a href="../../../" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+                                        <span class="label">Back to home</span>
+                                    </a>
+                                </li>
+								<li><a href="#first" class="arrow scrolly"><span class="label">Next</span></a></li>
+							</ul></header><div class="content">
+                            <p style="padding-top:14rem;">Fidéliser les collaborateurs en détectant les risques de départs.</p>
+						</div>
+					</section><section id="first"><header><h2>Attrition ESN</h2>
+    </header><div class="content" id="post-content">
+    <h3>1. Contexte et analyse des besoins</h3>
+<h4>1.1 Présentation (organisation et / ou contexte)</h4>
+<p>Quand j'ai pris le projet en main, le constat était simple : la DRH disposait de trois exports de données (SIRH, évaluations, sondage interne) mais pas d'un outil fiable pour anticiper les départs. L'enjeu n'était pas seulement de produire un score, mais de créer un cadre de décision clair et traçable pour accompagner les managers.</p>
+<p>Le contexte technique était favorable : une stack Python déjà choisie, la possibilité d'utiliser PostgreSQL, et un besoin de démonstration rapide (soutenance, déploiement léger sur Hugging Face). La maturité data est intermédiaire : données structurées et riches, mais pipeline et supervision encore à bâtir.</p>
+<h4>1.2 Collecte et analyse du besoin métier</h4>
+<p>Je me suis d'abord aligné avec les parties prenantes clés : RH (utilisateurs finaux), managers (bénéficiaires des alertes), data/IT (industrialisation), et conformité (RGPD, biais).</p>
+<p>Le recueil s'est fait à partir des livrables existants du projet et de l'analyse du dépôt :</p>
+<ul>
+<li>compréhension des données brutes (3 fichiers CSV) et de leur usage ;</li>
+<li>analyse de la documentation et des choix techniques ;</li>
+<li>revue des modules clés (<code>main.py</code>, <code>app.py</code>, <code>projet_05/dataset.py</code>).</li>
+</ul>
+<p>Les besoins ont été hiérarchisés autour de trois priorités :</p>
+<ol>
+<li>fiabiliser la fusion des sources et la préparation des données ;</li>
+<li>fournir un score de risque compréhensible avec un seuil de décision ajustable ;</li>
+<li>garantir la traçabilité des prédictions (journalisation).</li>
+</ol>
+<p>Contraintes majeures :</p>
+<ul>
+<li>disponibilité d'une base PostgreSQL en local, mais non sur Hugging Face (nécessité d'un fallback pandas) ;</li>
+<li>exigences de confidentialité et d'audit (journalisation des décisions) ;</li>
+<li>temps et budget limités pour une démonstration fonctionnelle.</li>
+</ul>
+<h3>2. Audit de la solution data existante (ou proposée si absence de solution existante)</h3>
+<h4>2.1 Solution actuelle ou proposée</h4>
+<p>L'absence de solution existante a conduit à proposer une architecture pragmatique, modulaire et orientée démonstration :</p>
+<ul>
+<li>ingestion des trois sources via <code>scripts/init_db.py</code> vers PostgreSQL ;</li>
+<li>préparation et fusion dans <code>projet_05/dataset.py</code> ;</li>
+<li>feature engineering + entraînement via <code>projet_05/features.py</code> et <code>projet_05/modeling/train.py</code> ;</li>
+<li>modèle sérialisé dans <code>models/best_model.joblib</code> ;</li>
+<li>interface Gradio dans <code>app.py</code> avec onglets Formulaire, Tableau, CSV et données brutes ;</li>
+<li>journalisation des prédictions dans <code>prediction_logs</code>.</li>
+</ul>
+<p>Flux simplifié :</p>
+<p></p>
+<div class="mermaid" data-theme="default">
+flowchart LR
+  A[CSV bruts] --&gt; B[(PostgreSQL)]
+  B --&gt; C[preparation/merge]
+  C --&gt; D[features]
+  D --&gt; E[entrainement]
+  E --&gt; F[modele]
+
+  C --&gt; G[Gradio]
+  F --&gt; G
+
+  G --&gt; H[logs predictions]
+</div>
+<h4>2.2 Évaluation de l'adéquation aux besoins</h4>
+<p>Critères d'analyse :</p>
+<ul>
+<li>performance : inference rapide sur données tabulaires, pipeline de training séparé ;</li>
+<li>scalabilité : suffisante pour un POC, limite pour des volumes massifs ;</li>
+<li>coût : stack open source, déploiement léger ;</li>
+<li>pertinence métier : score explicite, seuil ajustable, logs d'audit.</li>
+</ul>
+<p>Écarts et limites identifiés :</p>
+<ul>
+<li>dépendance à PostgreSQL pour le suivi fin ; sur Hugging Face, la journalisation est limitée ;</li>
+<li>couverture de tests partielle (zones non couvertes en modeling et explainability) ;</li>
+<li>absence d'un module d'explicabilité pleinement exploité dans la démonstration.</li>
+</ul>
+<h3>3. Identification d'une solution technique cible</h3>
+<p>Comparatif d'approches techniques :</p>
+<ul>
+<li>règles métiers simples : rapide, mais faible précision et faible adaptabilité ;</li>
+<li>ML classique sur données tabulaires (scikit-learn) : meilleur compromis qualité/complexité ;</li>
+<li>architectures plus lourdes (deep learning, MLOps avancé) : surdimensionnées pour le besoin actuel.</li>
+</ul>
+<p>La solution cible retient un ML classique avec une couche de pilotage légère :</p>
+<ul>
+<li>PostgreSQL pour l'intégrité et la traçabilité ;</li>
+<li>pipeline Python orchestré par <code>main.py</code> ;</li>
+<li>interface Gradio pour un usage immédiat ;</li>
+<li>CI/CD GitHub Actions pour la reproductibilité.</li>
+</ul>
+<p>Facteurs clés de succès :</p>
+<ul>
+<li>qualité et cohérence des trois sources ;</li>
+<li>choix d'un seuil métier validé avec les RH ;</li>
+<li>adoption par les équipes via une interface simple ;</li>
+<li>traçabilité des décisions pour audit et amélioration continue.</li>
+</ul>
+<p>Cas d'usage priorisés :</p>
+<ol>
+<li>scoring individuel via formulaire (usage quotidien RH) ;</li>
+<li>scoring en lot via CSV (campagnes d'analyse) ;</li>
+<li>monitoring des prédictions et des tendances (pilotage).</li>
+</ol>
+<h3>4. Appui stratégique et méthodologique</h3>
+<h4>4.1 Proposition de démarche projet</h4>
+<p>J'ai structuré la démarche en étapes lisibles :</p>
+<ol>
+<li>cadrage et compréhension des données ;</li>
+<li>construction de la base et du pipeline de préparation ;</li>
+<li>entraînement et évaluation du modèle ;</li>
+<li>packaging et interface Gradio ;</li>
+<li>déploiement, tests et documentation.</li>
+</ol>
+<p>Méthodologie : une approche CRISP-DM avec itérations courtes (prototypage rapide, validation métier, itération).</p>
+<h4>4.2 Aide à la prise de décision</h4>
+<p>Risques et opportunités :</p>
+<ul>
+<li>opportunité : visibilité RH immédiate sur les risques de départ ;</li>
+<li>risque : biais potentiels et perception RH (nécessité de transparence) ;</li>
+<li>risque : dépendance aux données d'entrée, qualité variable des sources.</li>
+</ul>
+<p>Scénarios budgétaires :</p>
+<ul>
+<li>scénario léger : stack open source locale + déploiement HF ;</li>
+<li>scénario renforcé : base managée + monitoring avancé + gouvernance.</li>
+</ul>
+<p>KPIs proposés :</p>
+<ul>
+<li>taux d'utilisation de l'outil par les RH ;</li>
+<li>précision des alertes (taux de faux positifs / faux négatifs) ;</li>
+<li>délai de mise à jour des modèles ;</li>
+<li>volume et qualité des logs de prédiction.</li>
+</ul>
+<p>Impacts pris en compte :</p>
+<ul>
+<li>éthique et conformité (RGPD, minimisation des données, explicabilité) ;</li>
+<li>organisationnel (processus RH de suivi des alertes) ;</li>
+<li>business (coût de l'attrition vs coût de l'intervention).</li>
+</ul>
+<h3>5. Contrôle et suivi du projet</h3>
+<h4>5.1 Tableau de bord de pilotage</h4>
+<p>Indicateurs de suivi :</p>
+<ul>
+<li>avancement des livrables (pipeline, modèle, app, doc) ;</li>
+<li>qualité et fraîcheur des données ;</li>
+<li>performance du modèle et répartition des scores ;</li>
+<li>volume de prédictions par source (formulaire, CSV, bruts).</li>
+</ul>
+<p>Reporting recommandé :</p>
+<ul>
+<li>hebdomadaire pour l'équipe projet ;</li>
+<li>mensuel pour le comité de pilotage RH/DSI.</li>
+</ul>
+<h4>5.2 Outils et process de suivi</h4>
+<ul>
+<li>logs d'exécution <code>logs/pipeline_logs</code> et <code>logs/tests_logs</code> ;</li>
+<li>journal des prédictions en base (<code>prediction_logs</code>) ;</li>
+<li>tests automatisés via Pytest ;</li>
+<li>documentation continue via MkDocs.</li>
+</ul>
+<h3>6. Conclusion &amp; recommandations</h3>
+<p>Ce projet part d'un besoin RH concret et aboutit à une solution opérationnelle : un pipeline data robuste, un modèle ML adapté aux données tabulaires et une interface accessible pour les équipes. Le tout est documenté et déployable rapidement.</p>
+<p>Décisions structurantes :</p>
+<ul>
+<li>PostgreSQL pour la fiabilité et l'audit ;</li>
+<li>scikit-learn pour un ML lisible et efficace ;</li>
+<li>Gradio pour une adoption rapide et une démonstration fluide.</li>
+</ul>
+<p>Prochaines étapes recommandées :</p>
+<ul>
+<li>renforcer la couverture de tests et l'explicabilité ;</li>
+<li>automatiser un monitoring de drift ;</li>
+<li>préparer une version intégrable dans le SI RH.</li>
+</ul>
+</div>
+</section><!-- Section --><section><header><h2>Restons en contact</h2>
+						</header><div class="content">
+							<p>Concrete data projects, clearly explained, with code and results available.</p>
+							<ul class="actions">
+<li>
+										<a href="../../../posts/portfolio/" class="button primary large">View portfolio</a>
+									</li>
+									<li>
+										<a href="mailto:stephane.manet@pm.me" class="button large">Contact me</a>
+									</li>
+							</ul>
+</div>
+						<footer><ul class="items">
+<li>
+									<h3>Email</h3>
+									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+								</li>
+								<li>
+									<h3>Réseaux sociaux</h3>
+									<ul class="icons">
+<li>
+												<a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin">
+													<span class="label">LinkedIn</span>
+												</a>
+											</li>
+											<li>
+												<a href="https://www.github.com/stephmnt" target="_blank" rel="noopener noreferrer" class="icon brands fa-github">
+													<span class="label">GitHub</span>
+												</a>
+											</li>
+									</ul>
+</li>
+							</ul></footer></section><!-- Copyright --><div class="copyright">
+<p>© 2026. A <a href="https://html5up.net">HTML5 UP</a> fork for Nikola by <a href="https://github.com/stephmnt">Stephane Manet</a></p>
+<p><i class="fab fa-python"></i> + <i class="fas fa-mug-hot"></i> + <i class="fas fa-heart"></i> = <i class="fas fa-code"></i></p>
+</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../../assets/js/jquery.min.js"></script><script src="../../../assets/js/jquery.scrolly.min.js"></script><script src="../../../assets/js/browser.min.js"></script><script src="../../../assets/js/breakpoints.min.js"></script><script src="../../../assets/js/util.js"></script><script src="../../../assets/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><script>
+			mermaid.initialize({ startOnLoad: true });
+			</script>
+</body>
+</html>

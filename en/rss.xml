@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="../assets/xml/rss.xsl" media="all"?><rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Datascience Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/</link><description>Le portfolio de tous mes projets data science</description><atom:link href="https://stephmnt.github.io/datascience_portfolio/en/rss.xml" rel="self" type="application/rss+xml"></atom:link><language>en</language><copyright>Contents © 2026 &lt;a href="mailto:stephane.manet@pm.me"&gt;Stéphane Manet&lt;/a&gt; </copyright><lastBuildDate>Sun, 01 Feb 2026 11:46:09 GMT</lastBuildDate><generator>Nikola (getnikola.com)</generator><docs>http://blogs.law.harvard.edu/tech/rss</docs><item><title>Classification d’images médicales</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/imagerie-medicale-non-semi-supervise/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h2&gt;Rapport de conduite de projet Data &amp;amp; ML — Classification d’images médicales (approches non &amp;amp; semi-supervisées)&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Tout est parti d’un constat simple : en imagerie médicale, on a souvent beaucoup d’images, mais trop peu de temps médical pour tout annoter correctement. Plutôt que d’attendre une campagne de labellisation parfaite, on a choisi une trajectoire progressive. D’abord, on apprend à “résumer” chaque image sous forme d’un vecteur de caractéristiques (des embeddings) afin d’avoir une représentation comparable et réutilisable. Ensuite, on organise les images non labellisées grâce au clustering pour mieux comprendre la structure du dataset. Enfin, on transforme une partie de cet “inconnu” en signal exploitable via des pseudo-labels, afin d’améliorer la classification tout en limitant l’effort d’annotation.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation (organisation et / ou contexte)&lt;/h4&gt;
+&lt;p&gt;Le projet s’inscrit dans le secteur de la santé, plus précisément dans le domaine de l’imagerie médicale. L’objectif opérationnel est de produire un modèle de classification binaire capable de distinguer des images “cancer” de celles considérées comme “normal”. L’enjeu est d’apporter une aide à la décision et au tri, sans se positionner comme un outil de diagnostic automatisé. Le jeu de travail mis à disposition comprend un petit socle d’images labellisées, au total cent images réparties équitablement entre les deux classes, ainsi qu’un volume bien plus important d’images non labellisées, au nombre de 1406. Les images sont homogènes en taille, ce qui simplifie la standardisation du pipeline et limite une partie des problèmes de qualité de données.&lt;/p&gt;
+&lt;p&gt;Sur le plan stratégique, ce projet vise surtout à réduire la dépendance à l’annotation manuelle, qui est coûteuse, rare et lente, tout en capitalisant sur la valeur du stock d’images non labellisées, généralement majoritaire dans les contextes de santé. La démarche retenue prépare également le passage à l’échelle : l’idée est de mettre en place une chaîne qui reste pertinente même lorsque la volumétrie augmente fortement.&lt;/p&gt;
+&lt;p&gt;En termes de maturité data &amp;amp; ML, le projet bénéficie d’une structuration simple des données, déjà séparées entre labellisé et non labellisé, et d’un équilibre des classes du côté labellisé. En revanche, la faiblesse principale reste la taille très limitée du dataset annoté, ce qui fragilise l’évaluation et augmente le risque de sur-apprentissage. Il existe aussi un risque de biais lié à la provenance des images et aux conditions d’acquisition, qui peuvent limiter la généralisation si le contexte de production diffère.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Le cadrage métier s’appuie sur une identification claire des parties prenantes. Les médecins et radiologues apportent la définition clinique du besoin, les critères d’acceptation et la validation des erreurs jugées tolérables. Les responsables métier ou produit cadrent la priorisation, l’intégration dans le parcours de travail et les attentes d’adoption. Les profils data et ML construisent les approches, organisent l’évaluation et pilotent les itérations. Les équipes data engineering assurent la robustesse du pipeline, le stockage et les questions de performance. Enfin, la conformité et la sécurité sont cadrées avec les interlocuteurs DPO et RSSI, compte tenu des exigences RGPD.&lt;/p&gt;
+&lt;p&gt;Le recueil du besoin s’est construit de manière pragmatique à partir de la mission et des livrables attendus, puis consolidé dans une logique d’ateliers de cadrage portant sur les objectifs, les contraintes, les critères de succès et les risques, à la fois techniques et réglementaires. Un PoC itératif a ensuite permis d’objectiver rapidement la faisabilité et de mettre des métriques sur le problème, en complément d’une analyse d’erreurs orientée métier.&lt;/p&gt;
+&lt;p&gt;La hiérarchisation des besoins suit une logique impact/effort. La première priorité est d’obtenir une baseline fiable sur la classification “cancer” versus “normal” avec un pipeline reproductible, de manière à sécuriser la valeur et la trajectoire. La deuxième priorité est d’exploiter les données non labellisées via des mécanismes semi-supervisés pour limiter la charge d’annotation. La troisième priorité est de préparer l’industrialisation, en particulier la traçabilité, le versioning des artefacts et le suivi des performances dans le temps.&lt;/p&gt;
+&lt;p&gt;Pour couvrir l’ensemble des dimensions pertinentes, le projet prend en compte à la fois la performance (avec des métriques adaptées comme la F1-score, la ROC-AUC, la matrice de confusion et un focus sur le rappel de la classe “cancer”), la robustesse (stabilité sur le test, sensibilité aux paramètres, analyse d’erreurs), la gouvernance (traçabilité, conformité, sécurisation, documentation) et l’opérationnel (coûts de calcul, fréquence de mise à jour, intégration dans les pratiques métier).&lt;/p&gt;
+&lt;p&gt;Les contraintes à intégrer sont fortes : il s’agit de données de santé, donc la conformité RGPD impose une logique de minimisation, de contrôle d’accès, de journalisation et de maîtrise de la conservation. De plus, puisque le modèle est une aide, il faut éviter la sur-confiance et privilégier le rappel ou la sensibilité quand le contexte clinique le nécessite, en limitant autant que possible les faux négatifs. Enfin, le projet vise des solutions sobres au début, en privilégiant des représentations réutilisables et des modèles légers avant d’envisager des stratégies plus coûteuses comme le fine-tuning.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée si absence de solution existante)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;L’état initial correspond à un stockage sous forme de fichiers, avec une séparation claire entre images labellisées et non labellisées. Il n’existe pas encore de pipeline ML industrialisé ; le projet a donc pour rôle de bâtir progressivement une solution cible à partir d’un PoC structurant.&lt;/p&gt;
+&lt;p&gt;Les technologies mobilisées dans le PoC reposent sur l’écosystème Python. Elles combinent des bibliothèques de manipulation de données pour structurer et tracer les expériences, un framework deep learning pour extraire des représentations visuelles via un modèle pré-entraîné, et des outils de machine learning classiques pour la réduction de dimension, le clustering et la classification. Les artefacts produits sont exportés dans des formats adaptés au travail itératif afin de réutiliser facilement les features sans devoir recalculer tout le pipeline à chaque itération.&lt;/p&gt;
+&lt;p&gt;Le processus d’exploitation des données s’organise en trois étapes principales. La première étape consiste à réaliser un contrôle qualité, en vérifiant la lecture des images, leur cohérence et quelques statistiques simples. La deuxième étape applique des prétraitements cohérents avec le modèle pré-entraîné choisi. La troisième étape extrait des embeddings à l’aide d’un ResNet18 pré-entraîné, en retirant la couche de classification finale afin de récupérer un vecteur de représentation. Ces embeddings sont ensuite stockés et associés à une traçabilité minimale, incluant le chemin du fichier et, lorsque disponible, le label.&lt;/p&gt;
+&lt;h4&gt;2.2 Évaluation de l’adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;L’adéquation de la solution PoC aux besoins se mesure d’abord sur la performance, avec des métriques robustes et comparables dans le temps, comme la F1-score, la ROC-AUC et les matrices de confusion, en gardant une attention particulière sur la classe “cancer”. Elle se mesure également sur la capacité à passer à l’échelle, puisque l’extraction d’embeddings peut être batchée sur CPU ou GPU et qu’une fois les embeddings stockés, le ré-entraînement de modèles légers devient rapide. Le coût est un critère clé : l’approche privilégie la vitesse et l’itération plutôt que la sophistication prématurée. Enfin, la pertinence métier se juge à travers l’analyse d’erreurs, notamment l’identification et la compréhension des faux négatifs.&lt;/p&gt;
+&lt;p&gt;L’audit met en évidence plusieurs limites. La première est la fragilité statistique liée au faible volume d’images labellisées, ce qui peut gonfler artificiellement les métriques et rendre la généralisation incertaine. La deuxième est que le clustering ne dispose pas de vérité terrain sur l’unlabeled, ce qui impose de s’appuyer sur des indicateurs proxy et des contrôles qualitatifs. La troisième est le risque inhérent à la pseudo-labellisation : si les pseudo-labels sont bruités, ils peuvent amplifier des erreurs au lieu d’aider le modèle.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Visualisation des flux / processus existants (PoC)&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+  A["Images&lt;br&gt;(labellisées + non labellisées)"] --&amp;gt; B["Contrôles qualité (QC)"]
+  B --&amp;gt; C["Extraction d’embeddings&lt;br&gt;(ResNet18 pré-entraîné)&lt;br&gt;→ vecteur 512D"]
+  C --&amp;gt; D["Stockage des features (versionnées)&lt;br&gt;+ traçabilité (path, label)"]
+  D --&amp;gt; E["Modélisation (baseline)"]
+  D --&amp;gt; F["Clustering"]
+  D --&amp;gt; G["Pseudo-labellisation (semi-sup)"]
+&lt;/div&gt;
+&lt;hr&gt;
+&lt;h3&gt;3. Identification d’une solution technique cible&lt;/h3&gt;
+&lt;p&gt;La solution technique cible se construit autour d’un comparatif d’approches. La première approche, retenue pour démarrer, consiste à exploiter des embeddings issus d’un modèle pré-entraîné, puis à entraîner un modèle classique de classification. Cette approche est rapide, peu coûteuse, itérative et relativement facile à analyser, ce qui en fait un excellent socle de démarrage. Elle peut néanmoins rencontrer un plafond de performance si les embeddings ne capturent pas suffisamment un signal clinique fin.&lt;/p&gt;
+&lt;p&gt;La deuxième approche, explorée en phase suivante, est la semi-supervision via pseudo-labellisation après clustering. Elle permet d’exploiter la masse de données non labellisées et de réduire l’effort d’annotation. En contrepartie, elle est sensible à la qualité des clusters et peut renforcer des erreurs si la stratégie de filtrage et de confiance n’est pas maîtrisée.&lt;/p&gt;
+&lt;p&gt;La troisième approche, envisagée comme un levier de performance si le ROI est confirmé, consiste à fine-tuner un modèle deep sur les données. Elle offre un potentiel supérieur, mais demande plus de labels, de ressources de calcul et une démarche de validation plus lourde.&lt;/p&gt;
+&lt;p&gt;Dans cette logique, la stratégie recommandée est de démarrer sobrement avec embeddings et modèle léger pour sécuriser rapidement la valeur. La semi-supervision est activée lorsque la qualité des pseudo-labels est suffisante et que l’on dispose d’un cadre d’évaluation robuste. Le fine-tuning est conservé comme un levier d’optimisation, à déclencher après consolidation des données, de la gouvernance et des retours métier.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Schéma d’architecture cible clair&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+  A["Sources images"] --&amp;gt; B["Ingestion / anonymisation&lt;br&gt;(si nécessaire)"]
+  B --&amp;gt; C["Data Lake"]
+
+  A --&amp;gt; D["QC &amp;amp; Data quality report"]
+  D --&amp;gt; E["Tableau de bord qualité"]
+
+  A --&amp;gt; F["Extraction embeddings (batch)"]
+  F --&amp;gt; G["Feature Store&lt;br&gt;(embeddings)"]
+
+  G --&amp;gt; H["Clustering + pseudo-labels&lt;br&gt;(+ confiance)"]
+  H --&amp;gt; I["Jeux d’entraînement enrichis"]
+
+  I --&amp;gt; J["Training + évaluation"]
+  J --&amp;gt; K["Model Registry"]
+
+  K --&amp;gt; L["Déploiement (API / batch)&lt;br&gt;+ monitoring"]
+  L --&amp;gt; M["Usage métier&lt;br&gt;&amp;amp; amélioration continue"]
+&lt;/div&gt;
+&lt;p&gt;Les facteurs clés de succès reposent sur la capacité à versionner les embeddings pour accélérer fortement les itérations, à standardiser les métriques et l’analyse d’erreurs, et à cadrer clairement l’usage clinique comme une aide nécessitant une validation humaine. Les points de vigilance concernent le risque de biais et de dérive dans le temps, le bruit introduit par des pseudo-labels de mauvaise qualité, et la conformité RGPD, qui impose un haut niveau de traçabilité et de sécurisation.&lt;/p&gt;
+&lt;p&gt;La priorisation des cas d’usage suit une logique simple : identifier les points de friction où l’automatisation apporte une valeur immédiate, comme le tri ou le pré-classement, puis évaluer via un PoC sur un périmètre limité avec des métriques cliniques pertinentes, et enfin prioriser en croisant impact, effort, risques et adoption. Dans ce cadre, le tri et le pré-classement constituent généralement un premier jalon à faible friction, l’aide au second avis apporte un impact fort avec un contrôle humain, et l’automatisation plus avancée ne devient réaliste que lorsque la maturité du dispositif et la validation sont suffisantes.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;La démarche projet recommandée combine CRISP-DM pour structurer les étapes et Agile pour livrer par incréments. Le cadrage sert à définir les objectifs, les métriques cibles, la gouvernance et le plan d’évaluation. La phase baseline met en place le pipeline de qualité, l’extraction d’embeddings, un modèle léger et une analyse d’erreurs. La phase semi-supervisée explore le clustering, la pseudo-labellisation, la stratégie de filtrage et la robustesse. L’industrialisation consolide le versioning, le registre de modèles, le monitoring et la documentation. Enfin, l’amélioration continue introduit un plan d’annotation ciblée, des boucles de retour terrain et le passage à l’échelle.&lt;/p&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Du côté des opportunités, l’approche permet d’exploiter rapidement l’unlabeled, d’itérer à faible coût et de construire une trajectoire de scaling. Les risques sont principalement liés au bruit des pseudo-labels, à la fragilité statistique d’un petit dataset labellisé, ainsi qu’aux biais et à la dérive si la distribution des images évolue.&lt;/p&gt;
+&lt;p&gt;Sur le plan budgétaire, un scénario de sobriété peut suffire au démarrage, en s’appuyant sur des embeddings et des modèles légers. Un scénario hybride devient pertinent lorsque l’on met en place la semi-supervision et un plan d’active learning pour maximiser la valeur de l’annotation. Un scénario orienté performance, incluant du fine-tuning et un MLOps plus complet, se justifie surtout lorsque l’usage métier est validé et que la gouvernance est stabilisée.&lt;/p&gt;
+&lt;p&gt;Les indicateurs de succès doivent articuler KPI business et KPI techniques. Côté business, on suivra par exemple le temps gagné, l’acceptation par les utilisateurs, la réduction du backlog et la satisfaction. Côté technique, on suivra la F1-score, la ROC-AUC, le rappel de la classe “cancer”, le taux de faux négatifs et la stabilité des performances dans le temps.&lt;/p&gt;
+&lt;p&gt;Enfin, la prise en compte des impacts éthiques, légaux et organisationnels est structurante. Éthiquement, il faut limiter la sur-confiance et documenter les limites. Légalement, la conformité RGPD impose des règles strictes d’accès, de journalisation et de conservation. Organisationnellement, il faut prévoir la formation, le changement de pratiques et un mécanisme de retour terrain.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Le pilotage du projet repose sur un tableau de bord couvrant le suivi des délais, des jalons, des risques et des dépendances, ainsi que la visibilité sur les coûts, notamment la consommation de calcul lors de l’extraction batch des embeddings et la charge équipe. Le suivi des livrables porte sur la complétude, la qualité, la relecture et la validation. La qualité des données est mesurée par des indicateurs comme le taux d’images valides, la présence de duplicats et des signaux de dérive. Enfin, la qualité modèle est suivie via des métriques standardisées, des matrices de confusion, des métriques centrées “cancer” et des indicateurs de calibration.&lt;/p&gt;
+&lt;p&gt;Le reporting peut être organisé avec un point hebdomadaire pour les décisions et les risques, une revue de fin de sprint centrée sur les résultats et l’analyse d’erreurs, et un comité mensuel de gouvernance incluant sécurité, RGPD et validation.&lt;/p&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;p&gt;Le suivi des expérimentations s’appuie sur un outil de tracking afin de journaliser les runs, les métriques et les paramètres, et sur une discipline de reproductibilité incluant les seeds, les versions de données, le code et les dépendances. La validation est facilitée par une documentation de type “model card” qui décrit l’usage prévu, les limites, les risques et les conditions de surveillance.&lt;/p&gt;
+&lt;p&gt;Le suivi projet et la collaboration reposent sur un outil de backlog et de planification, complété par une base documentaire centralisée. Le code est versionné dans Git, les artefacts data et modèles peuvent être suivis via un outil de versioning adapté, et une CI/CD minimale est recommandée pour sécuriser les tests du pipeline et les validations avant mise en production.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;p&gt;Les choix structurants du projet consistent à démarrer par une approche sobre, combinant embeddings pré-entraînés et modèle léger, puis à explorer la semi-supervision via clustering et pseudo-labellisation pour exploiter efficacement l’unlabeled. En parallèle, la mise en place d’un socle de traçabilité et de versioning est prioritaire pour rendre les itérations rapides et auditables.&lt;/p&gt;
+&lt;p&gt;Les perspectives d’évolution passent par un enrichissement progressif du labellisé, idéalement via une annotation ciblée, par un renforcement de la robustesse grâce à des schémas d’évaluation plus solides et des tests de dérive, et par l’activation du fine-tuning uniquement si le ROI est démontré et si le cadre de validation est suffisamment mature.&lt;/p&gt;
+&lt;p&gt;Les prochaines étapes recommandées s’enchaînent naturellement : consolider l’évaluation et l’analyse d’erreurs avec un focus clinique, améliorer la qualité des pseudo-labels en travaillant les méthodes, les seuils et les contrôles, déployer un socle MLOps minimal pour versionner embeddings et modèles et standardiser le monitoring, lancer une boucle d’active learning pour annoter “ce qui apporte le plus”, puis préparer le passage à l’échelle en industrialisant l’extraction batch et le stockage des représentations.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/imagerie-medicale-non-semi-supervise/</guid><pubDate>Sat, 31 Jan 2026 23:00:01 GMT</pubDate></item><item><title>Credit scoring</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/credit-scoring/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h4&gt;Introduction&lt;/h4&gt;
+&lt;p&gt;L’objectif n’était pas seulement d’obtenir de bonnes performances statistiques, mais de livrer un &lt;strong&gt;système de décision fiable, explicable, industrialisé et monitoré&lt;/strong&gt;, capable de répondre aux enjeux du crédit à la consommation.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Contexte et problématique métier&lt;/h4&gt;
+&lt;p&gt;Le projet démarre dans un contexte de forte pression opérationnelle.
+Chez &lt;em&gt;Prêt à Dépenser&lt;/em&gt;, l’équipe &lt;strong&gt;Credit Express&lt;/strong&gt; cherche à réduire au maximum le temps de décision pour l’octroi de crédit. En parallèle, la direction des risques est confrontée à une augmentation des impayés.&lt;/p&gt;
+&lt;p&gt;On se retrouve donc face à une tension classique :
+&lt;strong&gt;aller vite&lt;/strong&gt;, sans &lt;strong&gt;augmenter le risque&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Mon rôle a été de trouver un équilibre entre ces deux exigences, en tenant compte de contraintes fortes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;des données déséquilibrées,&lt;/li&gt;
+&lt;li&gt;des obligations de transparence et d’explicabilité,&lt;/li&gt;
+&lt;li&gt;et un besoin de mise en production rapide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le besoin métier est alors clairement formulé : produire un score de probabilité de défaut, associé à une décision d’octroi, explicable et utilisable en production, avec un suivi dans le temps.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;État initial et diagnostic&lt;/h4&gt;
+&lt;p&gt;Lorsque j’analyse l’existant, je constate qu’il n’y a pas encore de solution en production.
+En revanche, il existe une base de travail solide : des notebooks de modélisation, des datasets riches issus de plusieurs sources, et un premier travail de feature engineering déjà aligné avec la logique métier.&lt;/p&gt;
+&lt;p&gt;Le problème n’est donc pas la qualité de l’exploration, mais le &lt;strong&gt;passage à l’échelle&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Plusieurs écarts majeurs apparaissent :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pas d’API stable pour exposer le modèle,&lt;/li&gt;
+&lt;li&gt;pas de contrat de données clair,&lt;/li&gt;
+&lt;li&gt;pas de monitoring en production,&lt;/li&gt;
+&lt;li&gt;et une traçabilité incomplète malgré l’usage de MLflow.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;À ce stade, la solution est techniquement intéressante, mais &lt;strong&gt;non exploitable par le métier&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Choix de la solution cible&lt;/h4&gt;
+&lt;p&gt;La solution cible que je propose repose sur un principe simple :
+&lt;strong&gt;faire moins, mais mieux, et surtout durablement&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Côté modélisation, je privilégie des modèles tabulaires robustes, bien adaptés aux données de crédit. Ils offrent un bon compromis entre performance, stabilité et explicabilité.
+L’objectif n’est pas de maximiser un score abstrait, mais de maîtriser le coût métier, notamment en pénalisant fortement les faux négatifs.&lt;/p&gt;
+&lt;p&gt;L’explicabilité est intégrée dès la conception, à deux niveaux :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;globale, pour comprendre les facteurs de risque dominants,&lt;/li&gt;
+&lt;li&gt;locale, pour justifier une décision sur un dossier précis.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Côté industrialisation, l’architecture s’articule autour de briques simples et open source :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MLflow pour le suivi des expériences et des versions,&lt;/li&gt;
+&lt;li&gt;une API FastAPI pour le scoring,&lt;/li&gt;
+&lt;li&gt;Docker et CI/CD pour un déploiement reproductible,&lt;/li&gt;
+&lt;li&gt;et un système de logs structuré alimentant le monitoring.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le modèle devient ainsi un &lt;strong&gt;service&lt;/strong&gt;, et non plus un simple fichier de sortie de notebook.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Cas d’usage et valeur métier&lt;/h4&gt;
+&lt;p&gt;Quatre cas d’usage principaux sont priorisés.&lt;/p&gt;
+&lt;p&gt;D’abord, le scoring standard, exposé via une API, utilisé directement dans le parcours d’octroi.
+Ensuite, un scoring minimal, avec un nombre réduit de variables, pour des parcours rapides.
+Troisièmement, l’explicabilité locale, essentielle pour les analystes crédit et la conformité.
+Enfin, le monitoring continu, pour détecter les dérives de données ou de performance avant qu’elles n’impactent le métier.&lt;/p&gt;
+&lt;p&gt;Cette approche permet une adoption progressive par les équipes, tout en sécurisant la production.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Démarche projet et pilotage&lt;/h4&gt;
+&lt;p&gt;Sur le plan méthodologique, je m’appuie sur une démarche inspirée de CRISP-DM, mais exécutée de façon agile.&lt;/p&gt;
+&lt;p&gt;Le projet est découpé en phases courtes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;cadrage métier et exploration des données,&lt;/li&gt;
+&lt;li&gt;préparation et modélisation avec sélection d’un seuil métier,&lt;/li&gt;
+&lt;li&gt;industrialisation et tests,&lt;/li&gt;
+&lt;li&gt;mise en place du monitoring,&lt;/li&gt;
+&lt;li&gt;puis optimisation et sécurisation des performances.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les décisions sont systématiquement appuyées par des indicateurs clairs.
+Côté business : taux d’acceptation, pertes nettes, délai de décision.
+Côté machine learning : AUC, recall, score custom, calibration.
+Côté opérations : latence, taux d’erreur, qualité des logs.&lt;/p&gt;
+&lt;p&gt;Ces KPI servent de langage commun entre le métier, la data et l’IT.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Suivi, monitoring et maîtrise du risque&lt;/h4&gt;
+&lt;p&gt;Un point clé du projet est le suivi post-déploiement.
+Chaque prédiction génère des traces exploitables : distributions de scores, dérive des features, performance dans le temps.&lt;/p&gt;
+&lt;p&gt;Un tableau de bord permet de surveiller :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;le drift des données,&lt;/li&gt;
+&lt;li&gt;la stabilité des scores,&lt;/li&gt;
+&lt;li&gt;et les performances opérationnelles de l’API.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Un runbook est également défini pour guider les équipes en cas d’incident : identifier rapidement si le problème vient des données, du modèle ou de l’infrastructure.&lt;/p&gt;
+&lt;p&gt;On passe ainsi d’un modèle “boîte noire” à un &lt;strong&gt;système maîtrisé et observable&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Conclusion et perspectives&lt;/h4&gt;
+&lt;p&gt;Pour conclure, ce projet illustre le passage d’un besoin métier critique à une solution MLOps complète et exploitable.
+Le modèle n’est pas seulement performant : il est &lt;strong&gt;aligné avec les enjeux économiques&lt;/strong&gt;, explicable, industrialisé et surveillé dans le temps.&lt;/p&gt;
+&lt;p&gt;Les prochaines étapes sont clairement identifiées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;mise en place de retrainings périodiques,&lt;/li&gt;
+&lt;li&gt;amélioration éventuelle de la calibration des probabilités,&lt;/li&gt;
+&lt;li&gt;enrichissement des dashboards avec des segments métier,&lt;/li&gt;
+&lt;li&gt;et, à terme, une approche champion/challenger pour faire évoluer le scoring sans risque.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/credit-scoring/</guid><pubDate>Wed, 31 Dec 2025 23:00:01 GMT</pubDate></item><item><title>Attrition ESN</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/attrition-esn/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation (organisation et / ou contexte)&lt;/h4&gt;
+&lt;p&gt;Quand j'ai pris le projet en main, le constat était simple : la DRH disposait de trois exports de données (SIRH, évaluations, sondage interne) mais pas d'un outil fiable pour anticiper les départs. L'enjeu n'était pas seulement de produire un score, mais de créer un cadre de décision clair et traçable pour accompagner les managers.&lt;/p&gt;
+&lt;p&gt;Le contexte technique était favorable : une stack Python déjà choisie, la possibilité d'utiliser PostgreSQL, et un besoin de démonstration rapide (soutenance, déploiement léger sur Hugging Face). La maturité data est intermédiaire : données structurées et riches, mais pipeline et supervision encore à bâtir.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Je me suis d'abord aligné avec les parties prenantes clés : RH (utilisateurs finaux), managers (bénéficiaires des alertes), data/IT (industrialisation), et conformité (RGPD, biais).&lt;/p&gt;
+&lt;p&gt;Le recueil s'est fait à partir des livrables existants du projet et de l'analyse du dépôt :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;compréhension des données brutes (3 fichiers CSV) et de leur usage ;&lt;/li&gt;
+&lt;li&gt;analyse de la documentation et des choix techniques ;&lt;/li&gt;
+&lt;li&gt;revue des modules clés (&lt;code&gt;main.py&lt;/code&gt;, &lt;code&gt;app.py&lt;/code&gt;, &lt;code&gt;projet_05/dataset.py&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les besoins ont été hiérarchisés autour de trois priorités :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;fiabiliser la fusion des sources et la préparation des données ;&lt;/li&gt;
+&lt;li&gt;fournir un score de risque compréhensible avec un seuil de décision ajustable ;&lt;/li&gt;
+&lt;li&gt;garantir la traçabilité des prédictions (journalisation).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Contraintes majeures :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;disponibilité d'une base PostgreSQL en local, mais non sur Hugging Face (nécessité d'un fallback pandas) ;&lt;/li&gt;
+&lt;li&gt;exigences de confidentialité et d'audit (journalisation des décisions) ;&lt;/li&gt;
+&lt;li&gt;temps et budget limités pour une démonstration fonctionnelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée si absence de solution existante)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;L'absence de solution existante a conduit à proposer une architecture pragmatique, modulaire et orientée démonstration :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ingestion des trois sources via &lt;code&gt;scripts/init_db.py&lt;/code&gt; vers PostgreSQL ;&lt;/li&gt;
+&lt;li&gt;préparation et fusion dans &lt;code&gt;projet_05/dataset.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;feature engineering + entraînement via &lt;code&gt;projet_05/features.py&lt;/code&gt; et &lt;code&gt;projet_05/modeling/train.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;modèle sérialisé dans &lt;code&gt;models/best_model.joblib&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio dans &lt;code&gt;app.py&lt;/code&gt; avec onglets Formulaire, Tableau, CSV et données brutes ;&lt;/li&gt;
+&lt;li&gt;journalisation des prédictions dans &lt;code&gt;prediction_logs&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Flux simplifié :&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart LR
+  A[CSV bruts] --&amp;gt; B[(PostgreSQL)]
+  B --&amp;gt; C[preparation/merge]
+  C --&amp;gt; D[features]
+  D --&amp;gt; E[entrainement]
+  E --&amp;gt; F[modele]
+
+  C --&amp;gt; G[Gradio]
+  F --&amp;gt; G
+
+  G --&amp;gt; H[logs predictions]
+&lt;/div&gt;
+&lt;h4&gt;2.2 Évaluation de l'adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;Critères d'analyse :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;performance : inference rapide sur données tabulaires, pipeline de training séparé ;&lt;/li&gt;
+&lt;li&gt;scalabilité : suffisante pour un POC, limite pour des volumes massifs ;&lt;/li&gt;
+&lt;li&gt;coût : stack open source, déploiement léger ;&lt;/li&gt;
+&lt;li&gt;pertinence métier : score explicite, seuil ajustable, logs d'audit.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Écarts et limites identifiés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;dépendance à PostgreSQL pour le suivi fin ; sur Hugging Face, la journalisation est limitée ;&lt;/li&gt;
+&lt;li&gt;couverture de tests partielle (zones non couvertes en modeling et explainability) ;&lt;/li&gt;
+&lt;li&gt;absence d'un module d'explicabilité pleinement exploité dans la démonstration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. Identification d'une solution technique cible&lt;/h3&gt;
+&lt;p&gt;Comparatif d'approches techniques :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;règles métiers simples : rapide, mais faible précision et faible adaptabilité ;&lt;/li&gt;
+&lt;li&gt;ML classique sur données tabulaires (scikit-learn) : meilleur compromis qualité/complexité ;&lt;/li&gt;
+&lt;li&gt;architectures plus lourdes (deep learning, MLOps avancé) : surdimensionnées pour le besoin actuel.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La solution cible retient un ML classique avec une couche de pilotage légère :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour l'intégrité et la traçabilité ;&lt;/li&gt;
+&lt;li&gt;pipeline Python orchestré par &lt;code&gt;main.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio pour un usage immédiat ;&lt;/li&gt;
+&lt;li&gt;CI/CD GitHub Actions pour la reproductibilité.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Facteurs clés de succès :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;qualité et cohérence des trois sources ;&lt;/li&gt;
+&lt;li&gt;choix d'un seuil métier validé avec les RH ;&lt;/li&gt;
+&lt;li&gt;adoption par les équipes via une interface simple ;&lt;/li&gt;
+&lt;li&gt;traçabilité des décisions pour audit et amélioration continue.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Cas d'usage priorisés :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;scoring individuel via formulaire (usage quotidien RH) ;&lt;/li&gt;
+&lt;li&gt;scoring en lot via CSV (campagnes d'analyse) ;&lt;/li&gt;
+&lt;li&gt;monitoring des prédictions et des tendances (pilotage).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;J'ai structuré la démarche en étapes lisibles :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;cadrage et compréhension des données ;&lt;/li&gt;
+&lt;li&gt;construction de la base et du pipeline de préparation ;&lt;/li&gt;
+&lt;li&gt;entraînement et évaluation du modèle ;&lt;/li&gt;
+&lt;li&gt;packaging et interface Gradio ;&lt;/li&gt;
+&lt;li&gt;déploiement, tests et documentation.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Méthodologie : une approche CRISP-DM avec itérations courtes (prototypage rapide, validation métier, itération).&lt;/p&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Risques et opportunités :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;opportunité : visibilité RH immédiate sur les risques de départ ;&lt;/li&gt;
+&lt;li&gt;risque : biais potentiels et perception RH (nécessité de transparence) ;&lt;/li&gt;
+&lt;li&gt;risque : dépendance aux données d'entrée, qualité variable des sources.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Scénarios budgétaires :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;scénario léger : stack open source locale + déploiement HF ;&lt;/li&gt;
+&lt;li&gt;scénario renforcé : base managée + monitoring avancé + gouvernance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;KPIs proposés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;taux d'utilisation de l'outil par les RH ;&lt;/li&gt;
+&lt;li&gt;précision des alertes (taux de faux positifs / faux négatifs) ;&lt;/li&gt;
+&lt;li&gt;délai de mise à jour des modèles ;&lt;/li&gt;
+&lt;li&gt;volume et qualité des logs de prédiction.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Impacts pris en compte :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;éthique et conformité (RGPD, minimisation des données, explicabilité) ;&lt;/li&gt;
+&lt;li&gt;organisationnel (processus RH de suivi des alertes) ;&lt;/li&gt;
+&lt;li&gt;business (coût de l'attrition vs coût de l'intervention).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Indicateurs de suivi :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;avancement des livrables (pipeline, modèle, app, doc) ;&lt;/li&gt;
+&lt;li&gt;qualité et fraîcheur des données ;&lt;/li&gt;
+&lt;li&gt;performance du modèle et répartition des scores ;&lt;/li&gt;
+&lt;li&gt;volume de prédictions par source (formulaire, CSV, bruts).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Reporting recommandé :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;hebdomadaire pour l'équipe projet ;&lt;/li&gt;
+&lt;li&gt;mensuel pour le comité de pilotage RH/DSI.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;logs d'exécution &lt;code&gt;logs/pipeline_logs&lt;/code&gt; et &lt;code&gt;logs/tests_logs&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;journal des prédictions en base (&lt;code&gt;prediction_logs&lt;/code&gt;) ;&lt;/li&gt;
+&lt;li&gt;tests automatisés via Pytest ;&lt;/li&gt;
+&lt;li&gt;documentation continue via MkDocs.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;p&gt;Ce projet part d'un besoin RH concret et aboutit à une solution opérationnelle : un pipeline data robuste, un modèle ML adapté aux données tabulaires et une interface accessible pour les équipes. Le tout est documenté et déployable rapidement.&lt;/p&gt;
+&lt;p&gt;Décisions structurantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour la fiabilité et l'audit ;&lt;/li&gt;
+&lt;li&gt;scikit-learn pour un ML lisible et efficace ;&lt;/li&gt;
+&lt;li&gt;Gradio pour une adoption rapide et une démonstration fluide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Prochaines étapes recommandées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;renforcer la couverture de tests et l'explicabilité ;&lt;/li&gt;
+&lt;li&gt;automatiser un monitoring de drift ;&lt;/li&gt;
+&lt;li&gt;préparer une version intégrable dans le SI RH.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/attrition-esn/</guid><pubDate>Fri, 31 Oct 2025 23:00:01 GMT</pubDate></item><item><title>Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/portfolio/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Découvrez mes projets de data science et machine learning sur Github ici, ou poursuivez la navigation pour voir les rapports de projet.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/portfolio/</guid><pubDate>Sun, 31 Aug 2025 22:00:03 GMT</pubDate></item><item><title>Un nouveau départ</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/nouveau-depart/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Pendant plusieurs années, j’ai accompagné des organisations dans leur transformation digitale. Mon fil conducteur, c’était toujours le même : partir d’un besoin métier, définir des indicateurs, piloter un projet et rendre les résultats lisibles pour décider.&lt;/p&gt;
+&lt;p&gt;À force, j’ai eu envie d’aller au-delà du constat et du reporting : utiliser la donnée pour anticiper, automatiser et produire de vraies solutions. C’est ce qui m’a amené à me reconvertir via un Master Data Scientist Machine Learning.&lt;/p&gt;
+&lt;p&gt;Aujourd’hui, je sais couvrir la chaîne complète : préparation et analyse des données, modélisation ML et deep learning, et surtout passage en production avec API, cloud et bonnes pratiques MLOps comme le monitoring et le drift. Et je garde un vrai plus issu de mon parcours : le cadrage, la gestion de projet et la pédagogie — je sais faire le lien entre équipes métier et technique et livrer quelque chose d’utilisable. Mon objectif, c’est de construire des produits data robustes, mesurables et utiles.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+mindmap
+  root((Data Scientist - ML))
+    Analyse de données
+      Transformer des données brutes en dataset exploitable&lt;br&gt;Nettoyage, jointures, features, analyses exploratoires&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Modeling
+      Modèles supervisés pour prédire ou classer&lt;br&gt;Train validation, choix des métriques, optimisation&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Deep learning
+      Réseaux de neurones pour classification&lt;br&gt;Appliqué à des données complexes comme images ou texte&lt;br&gt;Projets: Image classification"
+    NLP et IA génératives
+      "Construire des systemes basés sur LLM&lt;br&gt;RAG pour retrouver des sources puis générer une réponse, et évaluation LLM&lt;br&gt;Projets: RAG LangChain Mistral Faiss, LLM evaluation"
+    MLOps et déploiement
+      Passer du notebook à un service utilisable&lt;br&gt;API, cloud, versioning, CI CD, monitoring et drift&lt;br&gt;Projets: ML model deployment API, Monitoring drift"
+    Compétences transférables
+      Ancien consultant en transformation digitale, j'apporte de compétences utiles en data science dans ce nouveau projet :&lt;br&gt;Cadrage besoin, KPI, gestion de projet, communication et storytelling&lt;br&gt;Projets: AI project framing et restitution sur tous les projets
+&lt;/div&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/nouveau-depart/</guid><pubDate>Sun, 31 Aug 2025 22:00:02 GMT</pubDate></item><item><title>À propos de ce portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/en/posts/a-propos/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Ce portfolio présente une sélection de mes projets en science des données, mettant en avant mes compétences en analyse de données, modélisation prédictive et visualisation. Chaque projet illustre une approche méthodologique rigoureuse et l'utilisation d'outils modernes pour résoudre des problèmes réels.&lt;/p&gt;
+&lt;p&gt;Il a été réalisé dans le cadre de &lt;a href="https://openclassrooms.com/fr/paths/1047-data-scientist-machine-learning"&gt;ma formation en Data Science avec OpenClassRooms&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;J'ai utilisé le générateur de site statique &lt;a href="https://getnikola.com/"&gt;Nikola&lt;/a&gt; pour créer ce portfolio, ce qui m'a permis de personnaliser le design et d'organiser efficacement le contenu. Je me suis appuyé sur le thème "&lt;a href="https://html5up.net/"&gt;Paradigm Shift&lt;/a&gt;" que j'ai adapté au format Nikola. Pour les besoins de présentation du portfolio, j'ai développé deux plugins, l'un pour intégrer les repos GitHub des projets, et l'autre pour rendre les diagrammes Mermaid compatibles avec les shortcodes Nikola.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/en/posts/a-propos/</guid><pubDate>Sun, 31 Aug 2025 22:00:01 GMT</pubDate></item></channel></rss>
