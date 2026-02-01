@@ -50,12 +50,19 @@ L'absence de solution existante a conduit à proposer une architecture pragmatiq
 
 Flux simplifié :
 
-```
-CSV bruts -> PostgreSQL -> preparation/merge -> features -> entrainement -> modele
-                                 |                                     |
-                                 +-----------------> Gradio <----------+
-                                                  logs predictions
-```
+{{% mermaid %}}
+flowchart LR
+  A[CSV bruts] --> B[(PostgreSQL)]
+  B --> C[preparation/merge]
+  C --> D[features]
+  D --> E[entrainement]
+  E --> F[modele]
+
+  C --> G[Gradio]
+  F --> G
+
+  G --> H[logs predictions]
+{{% /mermaid %}}
 
 ### 2.2 Évaluation de l'adéquation aux besoins
 
