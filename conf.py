@@ -22,9 +22,9 @@ GITHUB_COMMIT_SOURCE = False
 
 GITHUB_METADATA = {
     "manual_repositories": [
+        {"full_name": "stephmnt/RAG-recommandations-culturelles", "release_badge": False, "created_at_badge": True},
         {"full_name": "stephmnt/credit-scoring-mlops", "release_badge": True, "created_at_badge": True},
         {"full_name": "stephmnt/datascience_portfolio", "release_badge": False, "created_at_badge": True},
-        {"full_name": "stephmnt/attrition_ESN", "release_badge": False, "created_at_badge": True},
         {"full_name": "stephmnt/prediction_depart_rh", "release_badge": True, "created_at_badge": True},
         {"full_name": "stephmnt/ml-tumor-detection", "release_badge": True, "created_at_badge": True},
         {"full_name": "stephmnt/training-relations-in-ai-applications", "release_badge": False, "created_at_badge": True},
