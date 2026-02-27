@@ -5,13 +5,15 @@
 .. date: 2026-01-01 00:00:01
 -->
 
+## Contexte
+
 ### Introduction
 
 L’objectif n’était pas seulement d’obtenir de bonnes performances statistiques, mais de livrer un **système de décision fiable, explicable, industrialisé et monitoré**, capable de répondre aux enjeux du crédit à la consommation.
 
 ---
 
-### Contexte et problématique métier
+### Problématique métier
 
 Le projet démarre dans un contexte de forte pression opérationnelle.
 Chez *Prêt à Dépenser*, l’équipe **Credit Express** cherche à réduire au maximum le temps de décision pour l’octroi de crédit. En parallèle, la direction des risques est confrontée à une augmentation des impayés.
@@ -28,6 +30,8 @@ Mon rôle a été de trouver un équilibre entre ces deux exigences, en tenant c
 Le besoin métier est alors clairement formulé : produire un score de probabilité de défaut, associé à une décision d’octroi, explicable et utilisable en production, avec un suivi dans le temps.
 
 ---
+
+## Préparation
 
 ### État initial et diagnostic
 
@@ -84,6 +88,8 @@ Cette approche permet une adoption progressive par les équipes, tout en sécuri
 
 ---
 
+## Déploiement
+
 ### Démarche projet et pilotage
 
 Sur le plan méthodologique, je m’appuie sur une démarche inspirée de CRISP-DM, mais exécutée de façon agile.
@@ -122,7 +128,7 @@ On passe ainsi d’un modèle “boîte noire” à un **système maîtrisé et 
 
 ---
 
-### Conclusion et perspectives
+## Conclusion et perspectives
 
 Pour conclure, ce projet illustre le passage d’un besoin métier critique à une solution MLOps complète et exploitable.
 Le modèle n’est pas seulement performant : il est **aligné avec les enjeux économiques**, explicable, industrialisé et surveillé dans le temps.
