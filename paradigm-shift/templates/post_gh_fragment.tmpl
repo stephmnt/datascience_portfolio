@@ -16,7 +16,7 @@
     {% for r in github.public_repositories %}
         <li class="icon brands fa-github-alt">
             <a href="{{ r.html_url|e }}" target="_blank" rel="noopener noreferrer">{{ r.name|e }}</a>
-            {% if r.description %}<p>{{ r.description|e }}</p>{% endif %}
+            {% if r.description %}<p>{{ r.description|e }}</p>{% else %}<br />{% endif %}
             {% set full_name = r.full_name if r.full_name is defined and r.full_name else None %}
             {% if not full_name and github is defined and github.user_login and github.user_login != "manual" %}
                 {% set full_name = github.user_login ~ "/" ~ r.name %}

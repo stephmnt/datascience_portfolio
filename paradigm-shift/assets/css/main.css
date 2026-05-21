@@ -3279,8 +3279,20 @@ input, select, textarea {
 			#wrapper section > .content {
 				grid-area: content;
 				max-width: 60rem;
+				min-width: 0;
 				position: relative;
 			}
+
+				#wrapper section > .content .plotly-graph-div,
+				#wrapper section > .content .plot-container,
+				#wrapper section > .content .svg-container,
+				#wrapper section > .content .main-svg {
+					max-width: 100% !important;
+				}
+
+				#wrapper section > .content .plotly-graph-div {
+					width: 100% !important;
+				}
 
 			#wrapper section > footer {
 				grid-area: footer;

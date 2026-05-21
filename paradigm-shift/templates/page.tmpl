@@ -24,8 +24,8 @@
     <header>
         <h2>{{ post.title()|e }}</h2>
     </header>
-<div class="content" id="post-content">
-    {{ post.text(teaser_only=False) }}
-</div>
+    <div class="content">
+        {{ post.text(teaser_only=False) }}
+    </div>
 </section>
 {% endblock %}

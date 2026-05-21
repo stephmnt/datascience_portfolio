@@ -1,12 +1,29 @@
 {% extends 'base.tmpl' %}
-                    <section>
-{% block content_header scoped %}
+{% block center_section %}
+				<!-- Intro -->
+					<section class="intro">
+						{% set back_to_home_label = theme_config.get("back_to_home_label", "Back to home") if theme_config is defined else "Back to home" %}
+						{% set next_label = theme_config.get("next_label", "Next") if theme_config is defined else "Next" %}
+						<header>
+							<h1>{{ post.title()|e }}</h1>
+							<ul class="actions">
+                                <li>
+                                    <a href="{{ rel_link(post.permalink(), '/')|e }}" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+                                        <span class="label">{{ back_to_home_label|e }}</span>
+                                    </a>
+                                </li>
+								<li><a href="#first" class="arrow scrolly"><span class="label">{{ next_label|e }}</span></a></li>
+							</ul>
+						</header>
+						<div class="content">
+                            <p style="padding-top:14rem;">{{ post.description() }}</p>
+						</div>
+					</section>
+                    <section id="first">
 <header>
     <h2>{{ post.title()|e }}</h2>
 </header>
-{% endblock %}
 <!-- Page Content -->
-{% block content_post scoped %}
 <div class="content">
 {{ post.text(teaser_only=False) }}
 {% set show_stars = theme_config.get("github_show_stars", True) if theme_config is defined else True %}
@@ -18,7 +35,7 @@
     {% for r in github.public_repositories %}
         <li class="icon brands fa-github-alt">
             <a href="{{ r.html_url|e }}" target="_blank" rel="noopener noreferrer">{{ r.name|e }}</a>
-            {% if r.description %}<p>{{ r.description|e }}</p>{% endif %}
+            {% if r.description %}<p>{{ r.description|e }}</p>{% else %}<br />{% endif %}
             {% set full_name = r.full_name if r.full_name is defined and r.full_name else None %}
             {% if not full_name and github is defined and github.user_login and github.user_login != "manual" %}
                 {% set full_name = github.user_login ~ "/" ~ r.name %}
@@ -114,5 +131,5 @@
   {% endif %}
 {% endif %}
 </div>
-{% endblock %}  
 </section>
+{% endblock %}

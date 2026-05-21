@@ -27,3 +27,5 @@ mindmap
       Ancien consultant en transformation digitale, j'apporte de compétences utiles en data science dans ce nouveau projet :<br/>Cadrage besoin, KPI, gestion de projet, communication et storytelling<br/>Projets: AI project framing et restitution sur tous les projets
 
 {{% /mermaid %}}
+
+Voir aussi le [diagramme de flux de mes compétences transverses](/pages/diagramme-competences).
