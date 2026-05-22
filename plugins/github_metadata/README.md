@@ -8,18 +8,22 @@ manual list defined in `conf.py`.
 
 Copy the plugin folder into your Nikola site:
 
-```python
+```text
 your_site/
   plugins/
     github_metadata/
       github_metadata.py
       github_metadata.plugin
       README.md
+      conf.py.sample
+      requirements.txt
 ```
 
 ## Plugin files
 
 - `README.md` (this file)
+- `github_metadata.py` (plugin code)
+- `github_metadata.plugin` (Nikola/Yapsy metadata)
 - `conf.py.sample` (sample configuration)
 - `requirements.txt` (Python dependencies, currently `certifi`)
 
@@ -103,6 +107,8 @@ Optional single repo:
 {% endif %}
 ```
 
+`github.repository` is fetched only when `GITHUB_METADATA["repository"]` is set.
+
 ## What is injected
 
 The plugin injects a dictionary under `GITHUB_METADATA["inject_as"]` (default
@@ -110,7 +116,7 @@ The plugin injects a dictionary under `GITHUB_METADATA["inject_as"]` (default
 
 - `api_url`
 - `user_login`
-- `repository_nwo`
+- `repository_nwo` (only when `repository` is configured)
 - `public_repositories` (list)
 - `repository` (single repo, optional)
 - `errors` (list of strings)

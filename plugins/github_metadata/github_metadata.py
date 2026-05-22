@@ -98,8 +98,10 @@ class GithubMetadata(SignalHandler):
         cache_dir = _cache_dir(site)
 
         # Determine repo (optional) and user (for public repos)
-        repo_nwo = s.repository or _detect_repo_nwo(site)
-        detected_owner = repo_nwo.split("/", 1)[0] if repo_nwo and "/" in repo_nwo else None
+        detected_repo_nwo = _detect_repo_nwo(site)
+        repo_nwo = s.repository
+        owner_source = repo_nwo or detected_repo_nwo
+        detected_owner = owner_source.split("/", 1)[0] if owner_source and "/" in owner_source else None
         manual_repos = _normalize_manual_repos(s.manual_repositories, s.public_repositories.user)
         manual_owner = _detect_owner_from_repos(manual_repos)
 

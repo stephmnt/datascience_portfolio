@@ -5,8 +5,9 @@ Module = mermaid
 [Documentation]
 Author = Stéphane Manet
 Version = 0.1.0
-Description = Mermaid shortcode for Nikola
+Website = https://plugins.getnikola.com/#mermaid
+Description = Render Mermaid diagrams from Nikola shortcode blocks with an automatic Mermaid.js loader.
 
 [Nikola]
-PluginCategory = Shortcode
+PluginCategory = ShortcodePlugin
 MinVersion = 8.0.0

@@ -1,5 +1,9 @@
 # Datascience Portfolio (Nikola)
 
+[![Déploiement Nikola](https://img.shields.io/github/actions/workflow/status/stephmnt/datascience_portfolio/deploy.yml?branch=main&label=d%C3%A9ploiement&logo=githubactions&logoColor=white)](https://github.com/stephmnt/datascience_portfolio/actions/workflows/deploy.yml)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](requirements.txt)
+[![Licence](https://img.shields.io/github/license/stephmnt/datascience_portfolio?color=success)](LICENSE)
+
 Ce dépôt contient le code source d'un portfolio statique généré avec Nikola.
 Le site présente mon parcours de reconversion vers la data science et regroupe
 des projets de machine learning, deep learning, NLP, RAG, MLOps et data
@@ -118,6 +122,11 @@ Emplacement : `plugins/mermaid/`
 Ce plugin ajoute un shortcode Nikola permettant d'insérer des diagrammes Mermaid
 dans les contenus Markdown.
 
+Il sont disponibles sur leur repository respectif :
+
+- [github.com/stephmnt/shortcode_mermaid](https://github.com/stephmnt/shortcode_mermaid)
+- [github.com/stephmnt/GitHub_metadata](https://github.com/stephmnt/GitHub_metadata)
+
 Exemple d'utilisation :
 
 ```markdown
@@ -136,11 +145,9 @@ Le shortcode produit un bloc HTML :
 <div class="mermaid">...</div>
 ```
 
-Le rendu côté navigateur est assuré par Mermaid, chargé dans `base.tmpl` :
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-```
+Le rendu côté navigateur est assuré par le plugin lui-même : il injecte un
+loader Mermaid.js protégé avec le shortcode. Le thème n'a donc pas besoin de
+charger Mermaid dans `base.tmpl`.
 
 Usage actuel : carte de compétences dans `posts/02-nouveau-depart.md`.
 
