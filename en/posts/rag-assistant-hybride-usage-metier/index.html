@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>RAG : fiabiliser un assistant intelligent | Datascience Portfolio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="theme-color" content="#83F9D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="../../../site.webmanifest">
+<link rel="icon" href="../../../favicon.ico">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+<!-- Intro -->
+	<section class="intro"><header><h1>RAG : fiabiliser un assistant intelligent</h1>
+			<ul class="actions">
+<li>
+					<a href="../../../" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+						<span class="label">Back to home</span>
+					</a>
+				</li>
+				<li><a href="#first" class="arrow scrolly"><span class="label">Next</span></a></li>
+			</ul></header><div class="content">
+			<p style="padding-top:14rem;">Transformer un prototype RAG + SQL en un système métier plus fiable, mesurable et reproductible, avec API, évaluation RAGAS, validations et pilotage projet.</p>
+		</div>
+	</section><section id="first"><header><h2>RAG : fiabiliser un assistant intelligent</h2>
+    </header><div class="content" id="post-content">
+    <h2>Rapport de conduite de projet</h2>
+<h3>Fiabiliser un assistant RAG NBA pour un usage métier</h3>
+<p>Ce projet commence comme beaucoup de projets data appliqués : avec une promesse forte et un prototype encore fragile.</p>
+<p>SportSee dispose d’un assistant capable de répondre à certaines questions sur des données NBA. Le prototype est encourageant, mais il ne suffit pas encore pour un usage métier. Les coachs et analystes n’attendent pas seulement une réponse "plausible". Ils ont besoin d’une réponse utile, traçable, reproductible et défendable.</p>
+<p>L’objectif du projet a donc été reformulé de manière simple : transformer un prototype RAG intéressant en un système compréhensible, testable et pilotable.</p>
+<hr>
+<h3>1. Contexte et analyse des besoins</h3>
+<h4>1.1 Présentation de l’organisation et du contexte</h4>
+<p>SportSee est présentée comme une startup spécialisée dans l’IA appliquée à l’analyse de la performance sportive. Son positionnement se situe à l’intersection de trois mondes :</p>
+<ul>
+<li>la donnée sportive structurée ;</li>
+<li>les archives textuelles d’analyse ;</li>
+<li>l’intelligence artificielle générative au service des équipes métiers.</li>
+</ul>
+<p>Le contexte est celui d’une organisation agile, orientée produit, avec une maturité data intermédiaire :</p>
+<ul>
+<li>point fort : l’entreprise a déjà un prototype, un corpus, et un cas d’usage métier clair ;</li>
+<li>point faible : le prototype n’est pas encore assez robuste pour une mise en production ou une diffusion à d’autres clubs ;</li>
+<li>enjeu stratégique : gagner du temps d’analyse, fiabiliser les réponses, et rendre le système crédible pour des utilisateurs non techniques.</li>
+</ul>
+<p>Le projet ne porte donc pas seulement sur la performance du modèle. Il porte sur la confiance dans la chaîne complète : données, retrieval, SQL, génération, évaluation et documentation.</p>
+<h4>1.2 Collecte et analyse du besoin métier</h4>
+<p>Le besoin métier a été reconstitué à partir de plusieurs sources :</p>
+<ul>
+<li>le cadrage de mission ;</li>
+<li>les échanges fictifs avec Sarah, Data Scientist de l’équipe ;</li>
+<li>les exemples de questions métier fournis dans le scénario ;</li>
+<li>l’audit du prototype existant et de son comportement réel.</li>
+</ul>
+<p>Les parties prenantes principales sont les suivantes :</p>
+<ul>
+<li>Sarah, Data Scientist, qui porte la fiabilisation du prototype ;</li>
+<li>l’équipe R&amp;D, qui maintient l’assistant ;</li>
+<li>les coachs, analystes vidéo et préparateurs physiques, futurs utilisateurs ;</li>
+<li>plus largement, les décideurs métiers qui doivent juger si l’outil est assez fiable pour être utilisé.</li>
+</ul>
+<p>Les besoins ont été hiérarchisés en trois niveaux.</p>
+<table>
+<thead><tr>
+<th>Priorité</th>
+<th>Besoin</th>
+<th>Pourquoi c’est critique</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Haute</td>
+<td>Répondre correctement aux questions textuelles et chiffrées</td>
+<td>C’est la valeur métier directe du produit</td>
+</tr>
+<tr>
+<td>Haute</td>
+<td>Mesurer la qualité réelle du système</td>
+<td>Sans évaluation, impossible de décider d’un passage en production</td>
+</tr>
+<tr>
+<td>Haute</td>
+<td>Reproduire l’environnement et documenter le pipeline</td>
+<td>Condition de continuité, de maintenance et de crédibilité</td>
+</tr>
+<tr>
+<td>Moyenne</td>
+<td>Visualiser et suivre les performances dans le temps</td>
+<td>Important pour le pilotage et la soutenance</td>
+</tr>
+<tr>
+<td>Moyenne</td>
+<td>Mieux gérer les cas limites et les questions hybrides</td>
+<td>Important pour la robustesse métier</td>
+</tr>
+<tr>
+<td>Faible à moyenne</td>
+<td>Industrialiser davantage l’observabilité et le monitoring</td>
+<td>Utile à moyen terme, moins critique que la fiabilité de base</td>
+</tr>
+</tbody>
+</table>
+<p>Les contraintes identifiées sont à la fois métiers, techniques et opérationnelles :</p>
+<ul>
+<li>les réponses doivent rester compréhensibles pour un profil non technique ;</li>
+<li>les données textuelles et structurées doivent être cohérentes entre elles ;</li>
+<li>certaines données attendues ne sont pas présentes dans le corpus, ce qui impose au système de savoir dire "je ne sais pas" ;</li>
+<li>la chaîne dépend d’outils externes, notamment pour la génération et, potentiellement, pour l’OCR ;</li>
+<li>le projet doit rester démontrable dans un repo clair, simple à exécuter et à auditer.</li>
+</ul>
+<hr>
+<h3>2. Audit de la solution data existante</h3>
+<h4>2.1 Solution actuelle ou proposée</h4>
+<p>Au départ, la solution ressemble à un prototype RAG classique enrichi progressivement :</p>
+<ul>
+<li>un corpus de documents indexés dans FAISS ;</li>
+<li>des données NBA structurées chargées dans SQLite ;</li>
+<li>un assistant capable de combiner retrieval et génération ;</li>
+<li>un outillage SQL pour les questions chiffrées ;</li>
+<li>un script d’évaluation basé sur RAGAS ;</li>
+<li>une interface Streamlit et une API FastAPI.</li>
+</ul>
+<p>Le pipeline actuel peut être résumé ainsi :</p>
+<p></p>
+<div class="mermaid" data-theme="default">
+flowchart LR
+    A[Sources Excel et PDF] --&gt; B[Préparation des données]
+    B --&gt; C[Index FAISS]
+    B --&gt; D[Base SQLite]
+    C --&gt; E[Service RAG + SQL]
+    D --&gt; E
+    E --&gt; F[API / Streamlit]
+    E --&gt; G[Évaluation RAGAS]
+    G --&gt; H[Notebook de rapport]
+</div>
+<script>
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+</script><p>Cette architecture a un mérite important : elle couvre tout le cycle de vie d’un système data appliqué, de l’ingestion jusqu’à l’analyse des résultats.</p>
+<h4>2.2 Évaluation de l’adéquation aux besoins</h4>
+<p>L’audit montre un constat nuancé.</p>
+<p>La solution répond bien à plusieurs attentes :</p>
+<ul>
+<li>elle traite des questions documentaires ;</li>
+<li>elle sait mobiliser une base SQL pour les questions quantitatives ;</li>
+<li>elle dispose d’un dispositif d’évaluation explicite ;</li>
+<li>elle a été structurée pour devenir plus reproductible et plus lisible.</li>
+</ul>
+<p>Mais les écarts initiaux étaient réels :</p>
+<ul>
+<li>le prototype était plus convaincant sur les questions simples que sur les cas hybrides ;</li>
+<li>les performances globales n’étaient pas suffisantes pour conclure à une robustesse générale ;</li>
+<li>l’évaluation devait être mieux reliée à des cas d’usage métier ;</li>
+<li>l’observabilité et la validation des flux de données demandaient à être renforcées ;</li>
+<li>l’OCR s’est révélé instable sur la stack locale, ce qui a obligé à privilégier un mode de fonctionnement sûr plutôt qu’un mode "plus ambitieux mais fragile".</li>
+</ul>
+<p>Les critères retenus pour juger l’adéquation de la solution ont été :</p>
+<ul>
+<li>la pertinence des réponses ;</li>
+<li>la fidélité au contexte ;</li>
+<li>la qualité du retrieval ;</li>
+<li>la capacité à répondre aux questions chiffrées ;</li>
+<li>la traçabilité du pipeline ;</li>
+<li>la facilité de réexécution du projet ;</li>
+<li>la lisibilité du livrable pour un tiers.</li>
+</ul>
+<p>En synthèse, la solution est adaptée à une phase de démonstration sérieuse et d’audit méthodologique, mais elle n’est pas encore une solution de production industrialisée.</p>
+<hr>
+<h3>3. Identification d’une solution technique cible</h3>
+<p>Le choix de la cible n’a pas été guidé par la sophistication maximale. Il a été guidé par l’équilibre entre utilité métier, robustesse et clarté.</p>
+<p>Trois approches ont été comparées.</p>
+<table>
+<thead><tr>
+<th>Approche</th>
+<th>Avantages</th>
+<th>Limites</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>RAG seul</td>
+<td>Simple à comprendre, bon pour la recherche documentaire</td>
+<td>Faible dès qu’il faut comparer ou calculer des chiffres</td>
+</tr>
+<tr>
+<td>SQL seul</td>
+<td>Très bon pour les données structurées et les agrégations</td>
+<td>Incapable de répondre seul sur les contenus textuels</td>
+</tr>
+<tr>
+<td>RAG + SQL + évaluation</td>
+<td>Meilleure couverture métier, plus défendable, plus pilotable</td>
+<td>Plus complexe à concevoir et à tester</td>
+</tr>
+</tbody>
+</table>
+<p>La solution cible retenue est donc une architecture hybride :</p>
+<ul>
+<li>retrieval documentaire pour les contenus textuels ;</li>
+<li>base SQL pour les chiffres ;</li>
+<li>service partagé pour orchestrer les deux ;</li>
+<li>Pydantic pour valider les objets qui circulent ;</li>
+<li>RAGAS et métriques complémentaires pour objectiver la qualité ;</li>
+<li>notebook de rapport pour interpréter les résultats.</li>
+</ul>
+<h4>Architecture cible</h4>
+<p></p>
+<div class="mermaid" data-theme="default">
+flowchart TD
+    U[Utilisateur métier] --&gt; A[API / Streamlit]
+    A --&gt; B[Service RAGService]
+    B --&gt; C[Retriever FAISS]
+    B --&gt; D[Tool SQL]
+    B --&gt; E[Mistral]
+    C --&gt; F[Corpus documentaire]
+    D --&gt; G[SQLite NBA]
+    B --&gt; H[Réponse contrôlée]
+    H --&gt; I[Évaluation RAGAS]
+    I --&gt; J[Rapport et pilotage]
+</div>
+<script>
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+</script><h4>Facteurs clés de succès</h4>
+<ul>
+<li>garder un service partagé unique pour éviter les comportements divergents ;</li>
+<li>valider explicitement les flux de données ;</li>
+<li>traiter séparément les cas simples, complexes, bruités et hybrides ;</li>
+<li>documenter les limites plutôt que masquer les échecs ;</li>
+<li>rester sobre techniquement pour garder un repo compréhensible.</li>
+</ul>
+<h4>Points de vigilance</h4>
+<ul>
+<li>les métriques automatiques ne suffisent pas à elles seules ;</li>
+<li>le mapping langage naturel vers SQL reste une zone sensible ;</li>
+<li>la qualité du corpus conditionne fortement la qualité des réponses ;</li>
+<li>l’OCR n’est pas aujourd’hui un composant stable sur la stack locale ;</li>
+<li>un bon score moyen peut masquer des échecs critiques sur certains cas d’usage.</li>
+</ul>
+<h4>Priorisation des cas d’usage</h4>
+<p>La priorisation des cas d’usage s’est faite selon deux axes :</p>
+<ul>
+<li>valeur métier ;</li>
+<li>difficulté technique.</li>
+</ul>
+<p>Les cas d’usage prioritaires sont :</p>
+<ol>
+<li>retrouver une information simple sur une équipe ou un joueur ;</li>
+<li>répondre à une question chiffrée fiable ;</li>
+<li>gérer les questions hybrides texte + chiffres ;</li>
+<li>reconnaître honnêtement les limites du corpus.</li>
+</ol>
+<hr>
+<h3>4. Appui stratégique et méthodologique</h3>
+<h4>4.1 Proposition de démarche projet</h4>
+<p>La démarche la plus pertinente pour ce projet est une approche hybride entre CRISP-DM et gestion agile.</p>
+<p>CRISP-DM apporte un cadre utile :</p>
+<ul>
+<li>compréhension métier ;</li>
+<li>compréhension des données ;</li>
+<li>préparation des données ;</li>
+<li>modélisation ;</li>
+<li>évaluation ;</li>
+<li>déploiement.</li>
+</ul>
+<p>L’agilité apporte le rythme :</p>
+<ul>
+<li>itérations courtes ;</li>
+<li>revue régulière des résultats ;</li>
+<li>arbitrages rapides entre valeur et risque ;</li>
+<li>capacité à corriger la documentation et le code en continu.</li>
+</ul>
+<h4>Roadmap de mise en œuvre</h4>
+<table>
+<thead><tr>
+<th>Phase</th>
+<th>Objectif</th>
+<th>Livrables</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Phase 1</td>
+<td>Stabiliser l’environnement</td>
+<td>
+<code>requirements.txt</code>, README, arborescence claire</td>
+</tr>
+<tr>
+<td>Phase 2</td>
+<td>Structurer les données</td>
+<td>indexation, base SQLite, pipeline d’ingestion</td>
+</tr>
+<tr>
+<td>Phase 3</td>
+<td>Fiabiliser la chaîne de réponse</td>
+<td>service partagé, tool SQL, validations</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td>Mesurer objectivement</td>
+<td>
+<code>evaluate_ragas.py</code>, jeux de questions, artefacts</td>
+</tr>
+<tr>
+<td>Phase 5</td>
+<td>Interpréter et piloter</td>
+<td>notebook, comparatifs, storytelling de soutenance</td>
+</tr>
+</tbody>
+</table>
+<h4>4.2 Aide à la prise de décision</h4>
+<p>Le projet présente plusieurs opportunités :</p>
+<ul>
+<li>gagner du temps côté analystes ;</li>
+<li>réduire les réponses arbitraires ou difficiles à justifier ;</li>
+<li>disposer d’un socle réutilisable pour d’autres sports ou d’autres clubs ;</li>
+<li>installer une culture de mesure autour des systèmes d’IA générative.</li>
+</ul>
+<p>Les principaux risques sont :</p>
+<ul>
+<li>surconfiance dans les réponses du modèle ;</li>
+<li>sous-estimation des cas hybrides ;</li>
+<li>dépendance à des services externes ;</li>
+<li>qualité inégale des sources textuelles ;</li>
+<li>coût de maintenance si l’architecture devient trop complexe.</li>
+</ul>
+<h4>Scénarios budgétaires indicatifs</h4>
+<p>Ces estimations sont volontairement simples et servent surtout à la décision.</p>
+<table>
+<thead><tr>
+<th>Scénario</th>
+<th>Périmètre</th>
+<th>Coût indicatif</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Minimal</td>
+<td>usage local, API + notebook + tests</td>
+<td>faible</td>
+</tr>
+<tr>
+<td>Pilote</td>
+<td>équipe métier restreinte, suivi mensuel, support basique</td>
+<td>moyen</td>
+</tr>
+<tr>
+<td>Industrialisation</td>
+<td>supervision renforcée, monitoring continu, support multi-clubs</td>
+<td>élevé</td>
+</tr>
+</tbody>
+</table>
+<p>Les principaux postes de coût sont :</p>
+<ul>
+<li>appels API LLM / embeddings ;</li>
+<li>temps d’ingénierie et de maintenance ;</li>
+<li>hébergement de l’API et de l’interface ;</li>
+<li>monitoring et support ;</li>
+<li>travail de gouvernance documentaire et de qualification des cas de test.</li>
+</ul>
+<h4>Indicateurs de succès</h4>
+<p>Les KPI doivent rester lisibles pour les métiers.</p>
+<p>KPI business :</p>
+<ul>
+<li>temps gagné pour retrouver une information ;</li>
+<li>taux de réponses jugées utiles par les utilisateurs ;</li>
+<li>réduction des réponses non exploitables ;</li>
+<li>fréquence d’usage de l’assistant.</li>
+</ul>
+<p>KPI techniques :</p>
+<ul>
+<li>answer relevancy ;</li>
+<li>faithfulness ;</li>
+<li>précision et rappel du retrieval ;</li>
+<li>latence moyenne ;</li>
+<li>taux de questions où SQL est correctement mobilisé ;</li>
+<li>taux de cas limites correctement reconnus comme non couverts.</li>
+</ul>
+<h4>Impacts éthiques, légaux et organisationnels</h4>
+<p>Le projet ne manipule pas ici de données médicales sensibles, mais il touche à la performance sportive et à des usages décisionnels. Il faut donc :</p>
+<ul>
+<li>éviter de présenter une réponse générée comme une vérité garantie ;</li>
+<li>conserver la traçabilité des sources ;</li>
+<li>prévoir une relecture humaine pour les décisions importantes ;</li>
+<li>garder une gouvernance claire sur les données utilisées et partagées.</li>
+</ul>
+<hr>
+<h3>5. Contrôle et suivi du projet</h3>
+<h4>5.1 Tableau de bord de pilotage</h4>
+<p>Le projet peut être piloté avec un tableau de bord simple, lisible par un binôme métier / technique.</p>
+<table>
+<thead><tr>
+<th>Axe</th>
+<th>Indicateurs</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Avancement</td>
+<td>jalons atteints, scripts livrés, documentation à jour</td>
+</tr>
+<tr>
+<td>Qualité data</td>
+<td>taux de sources exploitables, complétude du corpus, incidents OCR</td>
+</tr>
+<tr>
+<td>Qualité IA</td>
+<td>scores RAGAS, métriques retrieval, cas faibles identifiés</td>
+</tr>
+<tr>
+<td>Robustesse</td>
+<td>tests verts, validations Pydantic, stabilité des runs</td>
+</tr>
+<tr>
+<td>Usage</td>
+<td>questions fréquentes, retours métier, cas non couverts</td>
+</tr>
+</tbody>
+</table>
+<p>Fréquence recommandée :</p>
+<ul>
+<li>point rapide hebdomadaire en phase de construction ;</li>
+<li>revue d’évaluation à chaque nouvelle campagne de tests ;</li>
+<li>point mensuel si le système entre en phase pilote.</li>
+</ul>
+<h4>5.2 Outils et process de suivi</h4>
+<p>Les outils et pratiques déjà cohérents avec le projet sont :</p>
+<ul>
+<li>Git et GitHub pour la version du code ;</li>
+<li>README pour la documentation d’exploitation ;</li>
+<li>notebook de rapport pour la lecture métier des résultats ;</li>
+<li>sorties <code>outputs/evaluations/</code> pour historiser les runs ;</li>
+<li>Logfire, quand il est activé, pour suivre le comportement du pipeline ;</li>
+<li>tests et validations Pydantic comme garde-fous de qualité.</li>
+</ul>
+<p>Le bon process n’est pas de produire plus d’outils. C’est de ritualiser leur usage :</p>
+<ul>
+<li>un lot de questions de référence stable ;</li>
+<li>une réévaluation après chaque changement important ;</li>
+<li>une lecture conjointe des scores et des cas d’échec ;</li>
+<li>une décision explicite sur ce qui est acceptable, fragile ou insuffisant.</li>
+</ul>
+<hr>
+<h3>6. Conclusion et recommandations</h3>
+<p>Ce projet raconte une trajectoire assez classique, mais saine : partir d’un prototype séduisant, puis accepter de le regarder de façon critique pour le rendre crédible.</p>
+<p>Les décisions structurantes prises dans le projet sont les suivantes :</p>
+<ul>
+<li>retenir une architecture hybride RAG + SQL ;</li>
+<li>privilégier la validation et la traçabilité plutôt qu’une complexité inutile ;</li>
+<li>évaluer le système avec des cas d’usage métier variés ;</li>
+<li>documenter explicitement les limites ;</li>
+<li>construire un repo défendable en soutenance comme en reprise technique.</li>
+</ul>
+<h4>Recommandations prioritaires</h4>
+<ol>
+<li>Stabiliser le corpus réellement exploitable, en particulier sur les documents OCR.</li>
+<li>Continuer à enrichir les cas de test hybrides et bruités.</li>
+<li>Conserver une lecture métier des scores, pas seulement une lecture technique.</li>
+<li>Maintenir un service partagé unique pour éviter les divergences entre API, UI et évaluation.</li>
+<li>Utiliser les résultats d’évaluation comme outil d’arbitrage produit, pas seulement comme livrable académique.</li>
+</ol>
+<h4>Perspectives d’évolution</h4>
+<ul>
+<li>améliorer la couverture OCR avec une solution plus stable ;</li>
+<li>renforcer le monitoring longitudinal des performances ;</li>
+<li>ouvrir la voie à d’autres sports ou d’autres sources ;</li>
+<li>intégrer à terme des visualisations automatiques ou des outils de restitution plus avancés.</li>
+</ul>
+<p>En résumé, le projet ne se limite pas à "faire répondre un LLM". Il montre comment cadrer, mesurer, expliquer et piloter un système d’IA appliqué à un besoin métier concret. C’est cette capacité de pilotage, plus encore que la seule réponse générée, qui donne au projet sa valeur réelle.</p>
+<p></p>
+<div class="mermaid" data-theme="default">
+flowchart TD
+    U[Utilisateur] --&gt;|Question| S[Streamlit MistralChat.py]
+    U --&gt;|HTTP JSON| A[FastAPI api.py]
+
+    S --&gt; G[Service partagé RAGService api.py]
+    A --&gt; G
+
+    G --&gt; R[Retriever FAISS utils/vector_store.py]
+    G --&gt; T[Tool SQL sql_tool.py]
+    G --&gt; M[Mistral API]
+
+    R --&gt; V[(vector_db/faiss_index.idx + document_chunks.pkl)]
+    T --&gt; D[(database/nba_data.db)]
+
+    I[indexer.py] --&gt; V
+    L[load_excel_to_db.py] --&gt; D
+
+    E[evaluate_ragas.py] --&gt; R
+    E --&gt; T
+    E --&gt; M
+    E --&gt; O[(outputs/evaluations)]
+
+    N[rapport_evaluation.ipynb] --&gt; O
+</div>
+<script>
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+</script>
+</div>
+</section><!-- Section --><section><header><h2>Restons en contact</h2>
+						</header><div class="content">
+							<p>Concrete data projects, clearly explained, with code and results available.</p>
+							<ul class="actions">
+<li>
+										<a href="../../../posts/portfolio/" class="button primary large">View portfolio</a>
+									</li>
+									<li>
+										<a href="mailto:stephane.manet@pm.me" class="button large">Contact me</a>
+									</li>
+							</ul>
+</div>
+						<footer><ul class="items">
+<li>
+									<h3>Email</h3>
+									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+								</li>
+								<li>
+									<h3>Réseaux sociaux</h3>
+									<ul class="icons">
+<li>
+												<a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin">
+													<span class="label">LinkedIn</span>
+												</a>
+											</li>
+											<li>
+												<a href="https://www.github.com/stephmnt" target="_blank" rel="noopener noreferrer" class="icon brands fa-github">
+													<span class="label">GitHub</span>
+												</a>
+											</li>
+									</ul>
+</li>
+							</ul></footer></section><!-- Copyright --><div class="copyright">
+<p>© 2026. A <a href="https://html5up.net">HTML5 UP</a> fork for Nikola by <a href="https://github.com/stephmnt">Stephane Manet</a></p>
+<p><i class="fab fa-python"></i> + <i class="fas fa-mug-hot"></i> + <i class="fas fa-heart"></i> = <i class="fas fa-code"></i></p>
+</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../../assets/js/jquery.min.js"></script><script src="../../../assets/js/jquery.scrolly.min.js"></script><script src="../../../assets/js/browser.min.js"></script><script src="../../../assets/js/breakpoints.min.js"></script><script src="../../../assets/js/util.js"></script><script src="../../../assets/js/main.js"></script>
+</body>
+</html>

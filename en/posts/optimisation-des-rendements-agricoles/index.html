@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Optimiser le rendement agricole | Datascience Portfolio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="theme-color" content="#83F9D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="../../../site.webmanifest">
+<link rel="icon" href="../../../favicon.ico">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+<!-- Intro -->
+	<section class="intro"><header><h1>Optimiser le rendement agricole</h1>
+			<ul class="actions">
+<li>
+					<a href="../../../" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+						<span class="label">Back to home</span>
+					</a>
+				</li>
+				<li><a href="#first" class="arrow scrolly"><span class="label">Next</span></a></li>
+			</ul></header><div class="content">
+			<p style="padding-top:14rem;">Prototype Data &amp; ML d’aide à la décision agricole permettant d’estimer le rendement d’une culture et de comparer plusieurs cultures selon les conditions locales d’une parcelle.</p>
+		</div>
+	</section><section id="first"><header><h2>Optimiser le rendement agricole</h2>
+    </header><div class="content" id="post-content">
+    <h2>Rapport de conduite de projet</h2>
+<h3>Optimisation des rendements agricoles</h3>
+<h4>Description courte</h4>
+<p>Ce projet vise à aider un exploitant agricole à estimer le rendement attendu d’une culture et à comparer plusieurs cultures possibles pour une même parcelle.<br>
+La solution repose sur deux modèles complémentaires : un modèle historique et un modèle local basé sur les conditions de terrain.</p>
+<hr>
+<h3>1. Résumé exécutif</h3>
+<p>Le projet <code>optimisation-des-rendements-agricoles</code> part d’une question simple, mais importante pour le monde agricole : comment aider un agriculteur à choisir une culture en s’appuyant sur des données plutôt que sur une intuition seule ?</p>
+<p>Au départ, l’ambition était large. Il était question d’optimiser les rendements, mais aussi d’évaluer la rentabilité. L’audit des données a rapidement montré une limite forte : aucune donnée financière fiable n’était disponible. Le projet ne contenait ni prix de vente, ni coûts de production, ni coûts logistiques, ni indicateurs de marge.</p>
+<p>La décision structurante a donc été de recentrer le projet sur une promesse solide : estimer et comparer des rendements agricoles, sans prétendre calculer une rentabilité économique complète.</p>
+<p>La solution finale combine deux approches :</p>
+<ul>
+<li>un modèle historique, appelé <code>P1</code>, qui estime un rendement de référence à partir du pays et de la culture ;</li>
+<li>un modèle local, appelé <code>P23</code>, qui ajuste cette estimation selon les conditions de parcelle : sol, météo, irrigation, engrais, pluie, température et durée avant récolte.</li>
+</ul>
+<p>La logique de prédiction est volontairement explicable :</p>
+<div class="code"><pre class="code literal-block">rendement final = P1 + (P3 - P2)
+````
+
+Autrement dit, le système part d’un rendement historique de référence, puis applique un ajustement local lié aux conditions concrètes de la parcelle.
+
+Le prototype est complet : il dispose d’une API FastAPI, d’une interface Streamlit, d’un suivi d’expériences avec MLflow, d’une conteneurisation Docker et de workflows GitHub Actions pour tester, entraîner et déployer l’application.
+
+---
+
+## 2. Contexte et besoin métier
+
+### 2.1 Le point de départ
+
+L’histoire du projet commence chez Agritech Answers, une entreprise spécialisée dans l’aide à la décision agricole. L’objectif est de transformer une demande métier en prototype Data &amp; ML utilisable.
+
+Le besoin vient d’un problème concret : un agriculteur doit choisir quoi cultiver sur une parcelle, alors que le rendement dépend de nombreux facteurs. Certains sont globaux, comme le pays, l’historique agricole ou la culture choisie. D’autres sont locaux, comme la météo, l’irrigation, le type de sol ou l’usage d’engrais.
+
+La question métier peut donc être formulée ainsi :
+
+&gt; Pour une parcelle donnée, quelle culture semble offrir le meilleur rendement estimé ?
+
+Le projet ne cherche pas à remplacer l’expertise agricole. Il apporte un outil d’aide à la décision, lisible, reproductible et fondé sur des données.
+
+### 2.2 Les utilisateurs concernés
+
+Le projet s’adresse principalement à quatre profils.
+
+| Partie prenante                    | Attente principale                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| Agriculteur ou conseiller agricole | Obtenir une estimation simple et compréhensible                           |
+| Lead Data Scientist                | Vérifier la méthode, la robustesse et la traçabilité                      |
+| Équipe technique                   | Disposer d’une API, d’une interface et d’un déploiement reproductibles    |
+| Évaluateur projet                  | Retrouver les preuves attendues : MLflow, pipeline, CI/CD, rapport métier |
+
+### 2.3 Le besoin reformulé
+
+Après analyse, le besoin a été reformulé autour de deux fonctionnalités principales :
+
+1. prédire le rendement d’une culture choisie dans un contexte donné ;
+2. recommander un classement de cultures possibles pour une parcelle.
+
+Cette reformulation est importante. Elle permet d’éviter une promesse trop large et de rester aligné avec les données réellement disponibles.
+
+Le projet parle donc de rendement agricole, pas de profit financier.
+
+---
+
+## 3. Audit des données et de la solution envisagée
+
+### 3.1 Les données disponibles
+
+L’audit a mis en évidence deux familles de données.
+
+| Source                           | Rôle dans le projet                                       | Granularité                |
+| -------------------------------- | --------------------------------------------------------- | -------------------------- |
+| `data/simulation/crop_yield.csv` | Mesurer l’effet des conditions locales de parcelle        | Observation simulée locale |
+| `data/historique/yield.csv`      | Construire la cible historique de rendement               | Pays / culture / année     |
+| `data/historique/rainfall.csv`   | Ajouter la pluie annuelle                                 | Pays / année               |
+| `data/historique/temp.csv`       | Ajouter la température annuelle                           | Pays / année               |
+| `data/historique/pesticides.csv` | Ajouter les intrants pesticides                           | Pays / année               |
+| `data/dataset_consolide.csv`     | Servir de base consolidée pour la modélisation historique | Pays / culture / année     |
+
+Le premier enseignement important est que ces données ne décrivent pas exactement le même niveau de réalité.
+
+Les données historiques racontent une évolution globale : un rendement par pays, culture et année.
+Les données de simulation décrivent plutôt une situation locale : type de sol, météo, irrigation, engrais et conditions de récolte.
+
+### 3.2 La décision d’audit
+
+Une fusion directe de toutes les données aurait été séduisante, mais fragile. Elle aurait donné l’impression de construire un grand modèle unique, alors que les sources n’ont pas la même granularité.
+
+Le projet a donc fait un choix plus prudent : ne pas forcer une jointure artificielle.
+
+La solution conserve deux briques séparées :
+
+- une brique historique pour estimer une base de rendement ;
+- une brique locale pour ajuster cette base selon les conditions de parcelle.
+
+Cette décision rend la solution plus claire, plus défendable et plus facile à expliquer.
+
+---
+
+## 4. Solution technique retenue
+
+### 4.1 Les options étudiées
+
+Trois options principales ont été envisagées.
+
+| Option                                        | Avantage                       | Limite                                                   | Décision    |
+| --------------------------------------------- | ------------------------------ | -------------------------------------------------------- | ----------- |
+| Un modèle global unique                       | Simple à présenter             | Fusion fragile entre données différentes                 | Non retenue |
+| Une recommandation directe par classification | Résultat immédiat              | Moins explicable et peu adaptée sans données économiques | Non retenue |
+| Deux modèles complémentaires                  | Respecte la nature des données | Architecture un peu plus complexe                        | Retenue     |
+
+L’option retenue est donc une architecture à deux modèles.
+
+### 4.2 Architecture générale
+
+```mermaid
+flowchart TD
+    A[Données brutes] --&gt; B[Préparation et consolidation]
+    B --&gt; C[Modèle historique P1]
+    B --&gt; D[Modèle local P23]
+    C --&gt; E[Tracking MLflow]
+    D --&gt; E
+    E --&gt; F[Promotion des artefacts runtime]
+    F --&gt; G[API FastAPI]
+    G --&gt; H[Interface Streamlit]
+    H --&gt; I[Estimation et recommandation de rendement]
+</pre></div>
+
+<p>Cette architecture suit une logique simple : préparer les données, entraîner les modèles, tracer les expériences, promouvoir les artefacts validés, puis servir les prédictions dans une application.</p>
+<h4>4.3 Composants principaux</h4>
+<table>
+<thead><tr>
+<th>Composant</th>
+<th>Rôle</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>notebooks/preparation.ipynb</code></td>
+<td>Exploration, nettoyage, ACP et préparation des données</td>
+</tr>
+<tr>
+<td><code>scripts/experience_1.py</code></td>
+<td>Entraînement et optimisation du modèle historique</td>
+</tr>
+<tr>
+<td><code>scripts/train_simulation_model.py</code></td>
+<td>Entraînement du modèle local</td>
+</tr>
+<tr>
+<td><code>scripts/promote_registered_model.py</code></td>
+<td>Export des modèles MLflow vers les artefacts runtime</td>
+</tr>
+<tr>
+<td><code>scripts/validate_runtime.py</code></td>
+<td>Vérification du chargement applicatif des modèles</td>
+</tr>
+<tr>
+<td><code>main.py</code></td>
+<td>API FastAPI</td>
+</tr>
+<tr>
+<td><code>streamlit/src/streamlit_app.py</code></td>
+<td>Interface utilisateur</td>
+</tr>
+<tr>
+<td><code>.github/workflows/deploy_hf_space.yml</code></td>
+<td>Déploiement applicatif</td>
+</tr>
+<tr>
+<td><code>.github/workflows/train_full_pipeline.yml</code></td>
+<td>Pipeline d’entraînement manuel</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3>5. Modélisation</h3>
+<h4>5.1 Modèle historique P1</h4>
+<p>Le modèle <code>P1</code> sert à estimer un rendement de référence à partir des données historiques.</p>
+<p>Il répond à la question suivante :</p>
+<blockquote>
+<p>Quel rendement peut-on attendre pour une culture donnée dans un pays donné, au regard de l’historique disponible ?</p>
+</blockquote>
+<p>Le modèle retenu est un <code>RandomForestRegressor</code>.</p>
+<table>
+<thead><tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Modèle</td>
+<td><code>RandomForestRegressor</code></td>
+</tr>
+<tr>
+<td>Run MLflow</td>
+<td><code>random_forest_search_01</code></td>
+</tr>
+<tr>
+<td>Registered model</td>
+<td><code>p1_historical_pipeline</code></td>
+</tr>
+<tr>
+<td>Version exportée</td>
+<td><code>7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Métriques principales :</p>
+<table>
+<thead><tr>
+<th>Métrique</th>
+<th style="text-align: right;">Valeur</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>RMSE test</td>
+<td style="text-align: right;"><code>2.0593</code></td>
+</tr>
+<tr>
+<td>MAE test</td>
+<td style="text-align: right;"><code>0.8026</code></td>
+</tr>
+<tr>
+<td>R² test</td>
+<td style="text-align: right;"><code>0.9468</code></td>
+</tr>
+<tr>
+<td>RMSE validation croisée moyenne</td>
+<td style="text-align: right;"><code>1.5814</code></td>
+</tr>
+<tr>
+<td>R² validation croisée moyen</td>
+<td style="text-align: right;"><code>0.9623</code></td>
+</tr>
+</tbody>
+</table>
+<p>Ces résultats indiquent que le modèle historique capte correctement les grandes tendances de rendement dans les données disponibles.</p>
+<h4>5.2 Modèle local P23</h4>
+<p>Le modèle <code>P23</code> sert à mesurer l’effet des conditions locales de parcelle.</p>
+<p>Il répond à une autre question :</p>
+<blockquote>
+<p>Comment les conditions concrètes de terrain modifient-elles le rendement attendu ?</p>
+</blockquote>
+<p>Le modèle retenu est une <code>LinearRegression</code>.</p>
+<table>
+<thead><tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Modèle</td>
+<td><code>LinearRegression</code></td>
+</tr>
+<tr>
+<td>Registered model</td>
+<td><code>p23_simulation_pipeline</code></td>
+</tr>
+<tr>
+<td>Version exportée</td>
+<td><code>6</code></td>
+</tr>
+</tbody>
+</table>
+<p>Métriques principales :</p>
+<table>
+<thead><tr>
+<th>Métrique</th>
+<th style="text-align: right;">Valeur</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>RMSE test</td>
+<td style="text-align: right;"><code>0.4967</code></td>
+</tr>
+<tr>
+<td>MAE test</td>
+<td style="text-align: right;"><code>0.3961</code></td>
+</tr>
+<tr>
+<td>R² test</td>
+<td style="text-align: right;"><code>0.9140</code></td>
+</tr>
+</tbody>
+</table>
+<p>Ce modèle local n’a pas le même rôle que <code>P1</code>. Il ne remplace pas le modèle historique. Il apporte un ajustement lié aux conditions de parcelle.</p>
+<hr>
+<h3>6. Méthode projet</h3>
+<h4>6.1 Une démarche inspirée de CRISP-DM</h4>
+<p>La conduite du projet suit une démarche proche de CRISP-DM, adaptée à un prototype MLOps.</p>
+<table>
+<thead><tr>
+<th>Phase</th>
+<th>Objectif</th>
+<th>Livrable principal</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Compréhension métier</td>
+<td>Clarifier le besoin et les limites</td>
+<td>
+<code>ressources/mission.md</code>, <code>ressources/questions.md</code>
+</td>
+</tr>
+<tr>
+<td>Compréhension des données</td>
+<td>Identifier les sources et les granularités</td>
+<td><code>notebooks/preparation.ipynb</code></td>
+</tr>
+<tr>
+<td>Préparation</td>
+<td>Nettoyer et consolider les données</td>
+<td><code>data/dataset_consolide.csv</code></td>
+</tr>
+<tr>
+<td>Modélisation</td>
+<td>Entraîner, comparer et tracer les modèles</td>
+<td>Scripts d’entraînement, MLflow</td>
+</tr>
+<tr>
+<td>Évaluation</td>
+<td>Vérifier les métriques et la robustesse</td>
+<td>Artefacts, tests, métadonnées</td>
+</tr>
+<tr>
+<td>Déploiement</td>
+<td>Rendre le prototype utilisable</td>
+<td>FastAPI, Streamlit, Docker, Hugging Face</td>
+</tr>
+</tbody>
+</table>
+<h4>6.2 Le récit du projet</h4>
+<p>Le projet a avancé par étapes.</p>
+<p>Au début, l’enjeu était de comprendre les données. La tentation aurait été de tout fusionner rapidement pour produire un premier modèle. Mais cette approche aurait créé une solution difficile à justifier.</p>
+<p>La première décision forte a donc été d’accepter la complexité des données. Les données historiques et les données locales ne racontaient pas la même chose. Plutôt que de masquer cette différence, le projet l’a utilisée comme base d’architecture.</p>
+<p>Ensuite, un premier modèle a été construit pour obtenir une estimation historique du rendement. Ce modèle donne un point de départ robuste.</p>
+<p>Puis un second modèle a été ajouté pour intégrer les conditions de parcelle. Cette étape permet de rapprocher la prédiction de la situation concrète de l’utilisateur.</p>
+<p>Enfin, la solution a été transformée en application : une API pour servir les prédictions, une interface pour les rendre accessibles, et une chaîne MLOps pour suivre les modèles et sécuriser le déploiement.</p>
+<p>Le projet raconte donc une progression claire :</p>
+<div class="code"><pre class="code literal-block">comprendre les données
+-&gt; refuser une fusion fragile
+-&gt; construire deux modèles complémentaires
+-&gt; rendre la prédiction explicable
+-&gt; livrer une application démontrable
+</pre></div>
+
+<hr>
+<h3>7. Aide à la décision</h3>
+<p>L’application permet à l’utilisateur de :</p>
+<ul>
+<li>choisir un pays ;</li>
+<li>choisir une culture ;</li>
+<li>renseigner les conditions de parcelle ;</li>
+<li>obtenir un rendement estimé ;</li>
+<li>comparer plusieurs cultures possibles ;</li>
+<li>consulter un classement des cultures les plus prometteuses en rendement.</li>
+</ul>
+<p>La recommandation produite n’est pas une décision automatique. Elle doit être lue comme une aide au raisonnement.</p>
+<p>Par exemple, une culture peut apparaître intéressante en rendement, mais rester moins pertinente en pratique si elle demande des semences indisponibles, des coûts élevés, une main-d’œuvre spécifique ou un marché local peu favorable.</p>
+<p>La solution reste donc volontairement prudente : elle compare des rendements estimés, mais ne conclut pas sur la rentabilité économique.</p>
+<hr>
+<h3>8. Suivi, pilotage et industrialisation</h3>
+<h4>8.1 Indicateurs de pilotage</h4>
+<p>Le projet est piloté à travers des preuves concrètes dans le dépôt.</p>
+<table>
+<thead><tr>
+<th>Axe de suivi</th>
+<th>Preuve associée</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Fonctionnel</td>
+<td>API, interface Streamlit, Space Hugging Face</td>
+</tr>
+<tr>
+<td>Données</td>
+<td>
+<code>data/dataset_consolide.csv</code>, artefacts d’analyse</td>
+</tr>
+<tr>
+<td>Modèle</td>
+<td>Runs MLflow, métriques, registered models</td>
+</tr>
+<tr>
+<td>Qualité logicielle</td>
+<td>Tests <code>pytest</code>, structure des scripts</td>
+</tr>
+<tr>
+<td>Reproductibilité</td>
+<td>
+<code>requirements.txt</code>, <code>Dockerfile</code>
+</td>
+</tr>
+<tr>
+<td>Déploiement</td>
+<td>GitHub Actions, workflow de déploiement</td>
+</tr>
+</tbody>
+</table>
+<h4>8.2 Rôle de MLflow</h4>
+<p>MLflow sert de carnet d’expériences.</p>
+<p>Il permet de conserver :</p>
+<ul>
+<li>les runs ;</li>
+<li>les paramètres ;</li>
+<li>les métriques ;</li>
+<li>les artefacts ;</li>
+<li>les modèles enregistrés.</li>
+</ul>
+<p>Les deux modèles suivis sont :</p>
+<ul>
+<li>
+<code>p1_historical_pipeline</code> ;</li>
+<li>
+<code>p23_simulation_pipeline</code>.</li>
+</ul>
+<p>Cette traçabilité est essentielle pour justifier les choix techniques et éviter qu’un modèle soit promu sans preuve de performance.</p>
+<h4>8.3 Rôle de GitHub Actions</h4>
+<p>GitHub Actions permet de séparer deux moments du cycle de vie :</p>
+<ul>
+<li>l’entraînement ;</li>
+<li>le déploiement.</li>
+</ul>
+<p>Le workflow de déploiement ne réentraîne pas les modèles à chaque modification. Il teste, construit et déploie l’application à partir d’artefacts déjà validés.</p>
+<p>Cette séparation est importante. Elle évite de rendre le déploiement dépendant d’un entraînement potentiellement long, coûteux ou instable.</p>
+<p>Le pipeline complet peut être lancé avec :</p>
+<div class="code"><pre class="code literal-block">python3<span class="w"> </span>scripts/run_full_pipeline.py
+</pre></div>
+
+<p>Il orchestre :</p>
+<ol>
+<li>la préparation des données ;</li>
+<li>l’entraînement du modèle historique ;</li>
+<li>l’entraînement ou la réutilisation du modèle local ;</li>
+<li>l’enregistrement MLflow ;</li>
+<li>la promotion des modèles runtime ;</li>
+<li>la validation applicative.</li>
+</ol>
+<hr>
+<h3>9. Résultats métier</h3>
+<p>Le prototype répond à deux questions principales.</p>
+<p>Première question :</p>
+<blockquote>
+<p>Pour cette culture, dans ce pays et avec ces conditions de parcelle, quel rendement peut être estimé ?</p>
+</blockquote>
+<p>Deuxième question :</p>
+<blockquote>
+<p>Parmi les cultures supportées, lesquelles semblent les plus intéressantes en rendement pour cette parcelle ?</p>
+</blockquote>
+<p>L’analyse exploratoire a aussi permis de confirmer plusieurs intuitions métier :</p>
+<ul>
+<li>la pluie joue un rôle structurant ;</li>
+<li>la température apporte une information complémentaire ;</li>
+<li>la durée avant récolte influence le résultat local ;</li>
+<li>l’irrigation, l’engrais, le type de sol et la météo modifient le rendement estimé.</li>
+</ul>
+<p>La valeur du projet ne se limite donc pas à un score de modèle. Elle réside dans la construction d’une chaîne complète :</p>
+<div class="code"><pre class="code literal-block">données -&gt; modèles -&gt; API -&gt; interface -&gt; recommandation de rendement
+</pre></div>
+
+<hr>
+<h3>10. Risques, limites et réponses apportées</h3>
+<table>
+<thead><tr>
+<th>Sujet</th>
+<th>Risque</th>
+<th>Réponse projet</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Rentabilité</td>
+<td>Faire croire à un calcul de profit</td>
+<td>Recentrage explicite sur le rendement</td>
+</tr>
+<tr>
+<td>Données</td>
+<td>Fusionner des sources incompatibles</td>
+<td>Séparation entre modèle historique et modèle local</td>
+</tr>
+<tr>
+<td>Modèle</td>
+<td>Surinterpréter les métriques</td>
+<td>Documentation des limites et des métriques</td>
+</tr>
+<tr>
+<td>Recommandation</td>
+<td>Recommander hors domaine connu</td>
+<td>Limitation aux couples pays / culture supportés</td>
+</tr>
+<tr>
+<td>Déploiement</td>
+<td>Casser l’application après évolution</td>
+<td>Tests, Docker, validation runtime</td>
+</tr>
+<tr>
+<td>Industrialisation</td>
+<td>Dépendance au notebook de préparation</td>
+<td>Exécution headless via script dédié</td>
+</tr>
+</tbody>
+</table>
+<p>Les principales limites actuelles sont les suivantes :</p>
+<ul>
+<li>absence de données financières ;</li>
+<li>impossibilité de calculer une marge ou un profit ;</li>
+<li>préparation encore partiellement dépendante d’un notebook ;</li>
+<li>analyse SHAP locale, mais pas encore d’analyse globale complète ;</li>
+<li>validation croisée structurée pour <code>P1</code>, mais pas encore pour <code>P23</code> ;</li>
+<li>recommandations limitées aux cultures et pays supportés par les données.</li>
+</ul>
+<p>Ces limites ne bloquent pas la démonstration. Elles définissent plutôt les prochaines étapes pour passer d’un prototype à un outil plus industrialisé.</p>
+<hr>
+<h3>11. Recommandations</h3>
+<p>Pour poursuivre le projet, les recommandations sont les suivantes :</p>
+<ol>
+<li>intégrer des données économiques pour passer du rendement à la marge ;</li>
+<li>transformer progressivement <code>preparation.ipynb</code> en script Python natif ;</li>
+<li>renforcer l’évaluation du modèle <code>P23</code> avec validation croisée ;</li>
+<li>ajouter des seuils automatiques de qualité avant promotion d’un modèle ;</li>
+<li>mettre en place un monitoring de production : dérive des données, erreurs API, temps de réponse ;</li>
+<li>produire une documentation utilisateur courte pour expliquer comment lire une recommandation ;</li>
+<li>enrichir les données avec des informations plus locales : région, type d’exploitation, saison, prix de marché.</li>
+</ol>
+<hr>
+<h3>12. Conclusion</h3>
+<p>Le projet <code>optimisation-des-rendements-agricoles</code> a suivi une trajectoire cohérente : partir d’un besoin agricole concret, analyser les données disponibles, accepter leurs limites, puis construire une solution explicable et déployable.</p>
+<p>La décision la plus importante a été de ne pas promettre plus que ce que les données permettent. Le prototype n’optimise pas une rentabilité financière complète. Il aide à comparer des cultures sur la base du rendement estimé.</p>
+<p>Cette approche rend le projet plus crédible. Elle montre qu’un bon projet Data &amp; ML ne consiste pas seulement à entraîner un modèle performant. Il consiste aussi à formuler correctement le problème, à respecter les données, à expliquer les choix techniques et à livrer une solution utilisable.</p>
+<p>Le prototype est donc prêt pour une démonstration métier et pour une discussion d’industrialisation.</p>
+</div>
+</section><!-- Section --><section><header><h2>Restons en contact</h2>
+						</header><div class="content">
+							<p>Concrete data projects, clearly explained, with code and results available.</p>
+							<ul class="actions">
+<li>
+										<a href="../../../posts/portfolio/" class="button primary large">View portfolio</a>
+									</li>
+									<li>
+										<a href="mailto:stephane.manet@pm.me" class="button large">Contact me</a>
+									</li>
+							</ul>
+</div>
+						<footer><ul class="items">
+<li>
+									<h3>Email</h3>
+									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+								</li>
+								<li>
+									<h3>Réseaux sociaux</h3>
+									<ul class="icons">
+<li>
+												<a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin">
+													<span class="label">LinkedIn</span>
+												</a>
+											</li>
+											<li>
+												<a href="https://www.github.com/stephmnt" target="_blank" rel="noopener noreferrer" class="icon brands fa-github">
+													<span class="label">GitHub</span>
+												</a>
+											</li>
+									</ul>
+</li>
+							</ul></footer></section><!-- Copyright --><div class="copyright">
+<p>© 2026. A <a href="https://html5up.net">HTML5 UP</a> fork for Nikola by <a href="https://github.com/stephmnt">Stephane Manet</a></p>
+<p><i class="fab fa-python"></i> + <i class="fas fa-mug-hot"></i> + <i class="fas fa-heart"></i> = <i class="fas fa-code"></i></p>
+</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../../assets/js/jquery.min.js"></script><script src="../../../assets/js/jquery.scrolly.min.js"></script><script src="../../../assets/js/browser.min.js"></script><script src="../../../assets/js/breakpoints.min.js"></script><script src="../../../assets/js/util.js"></script><script src="../../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>RAG : assistant intelligent de recommandations culturelles | Datascience Portfolio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="theme-color" content="#83F9D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="../../../site.webmanifest">
+<link rel="icon" href="../../../favicon.ico">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+<!-- Intro -->
+	<section class="intro"><header><h1>RAG : assistant intelligent de recommandations culturelles</h1>
+			<ul class="actions">
+<li>
+					<a href="../../../" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+						<span class="label">Back to home</span>
+					</a>
+				</li>
+				<li><a href="#first" class="arrow scrolly"><span class="label">Next</span></a></li>
+			</ul></header><div class="content">
+			<p style="padding-top:14rem;">Construire un POC RAG de bout en bout pour recommander des évènements culturels fiables en Occitanie, via une API, avec robustesse (tests, logs) et reproductibilité.</p>
+		</div>
+	</section><section id="first"><header><h2>RAG : assistant intelligent de recommandations culturelles</h2>
+    </header><div class="content" id="post-content">
+    <h3>0. Fil narratif du projet</h3>
+<p>Au départ, le besoin exprimé par Jérémy (responsable technique) était très concret : <em>"Pouvons-nous prouver rapidement qu'un assistant intelligent peut recommander des évènements culturels fiables, exploitables via API, sans lancer un grand chantier d'industrialisation ?"</em></p>
+<p>La réponse du projet a été volontairement pragmatique :</p>
+<ul>
+<li>construire un POC de bout en bout,</li>
+<li>limiter le périmètre à l'Occitanie pour garantir la qualité,</li>
+<li>privilégier la robustesse (tests, logs, reproductibilité),</li>
+<li>livrer une API utilisable tout de suite par les équipes produit/marketing.</li>
+</ul>
+<p>Ce rapport raconte cette démarche, depuis le besoin métier jusqu'aux décisions de pilotage et aux prochaines étapes.</p>
+<hr>
+<h3>1. Contexte et analyse des besoins</h3>
+<h4>1.1 Présentation</h4>
+<p><strong>Organisation cible :</strong> Puls-Events, entreprise technologique orientée recommandations culturelles.</p>
+<p><strong>Structure projet :</strong></p>
+<ul>
+<li>métier : équipes produit/marketing qui veulent un assistant testable rapidement,</li>
+<li>technique : responsable technique + implémentation data/ML,</li>
+<li>exploitation : besoin d'une API stable pour intégration future.</li>
+</ul>
+<p><strong>Enjeux stratégiques liés à la donnée :</strong></p>
+<ul>
+<li>convertir un catalogue d'évènements en expérience conversationnelle utile,</li>
+<li>réduire le temps entre la question utilisateur et une suggestion actionnable,</li>
+<li>rendre les réponses auditables (sources, dates, lieux), et non "boîte noire".</li>
+</ul>
+<p><strong>Maturité data &amp; ML (forces / faiblesses) :</strong></p>
+<ul>
+<li>
+<p>Forces :</p>
+</li>
+<li>
+<p>accès à une source d'évènements (OpenAgenda),</p>
+</li>
+<li>vision produit claire sur l'usage final,</li>
+<li>capacité à tester via API locale rapidement.</li>
+<li>
+<p>Faiblesses :</p>
+</li>
+<li>
+<p>qualité hétérogène des métadonnées source (notamment URLs),</p>
+</li>
+<li>absence initiale d'un socle ML standardisé,</li>
+<li>besoin d'un cadre d'évaluation plus riche pour le passage à l'échelle.</li>
+</ul>
+<h4>1.2 Collecte et analyse du besoin métier</h4>
+<p><strong>Parties prenantes identifiées :</strong></p>
+<ul>
+<li>Jérémy (sponsor technique et arbitrage),</li>
+<li>équipe produit (parcours utilisateur, cas d'usage),</li>
+<li>équipe marketing (valeur business des recommandations),</li>
+<li>data scientist/ML engineer (conception et delivery),</li>
+<li>évaluateur final (validation des livrables et de la soutenance).</li>
+</ul>
+<p><strong>Recueil du besoin (sources utilisées) :</strong></p>
+<ul>
+<li>cadrage de mission (<code>ressources/mission.md</code>),</li>
+<li>critères de validation (<code>ressources/livrables.md</code>),</li>
+<li>itérations techniques et tests automatisés (<code>tests/tests.py</code>),</li>
+<li>démonstration locale API (commands <code>app.py run-api</code>, <code>app.py api-test</code>).</li>
+</ul>
+<p><strong>Hiérarchisation des besoins (priorisation MoSCoW) :</strong></p>
+<table>
+<thead><tr>
+<th>Niveau</th>
+<th>Besoin</th>
+<th>Statut projet</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Must</td>
+<td>Réponse RAG basée sur des sources réelles</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Must</td>
+<td>API REST <code>/ask</code>, <code>/rebuild</code>, <code>/health</code>, <code>/metadata</code>
+</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Must</td>
+<td>Reproductibilité et secrets hors code</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Must</td>
+<td>Tests unitaires relançables sans réseau</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Should</td>
+<td>Interface web simple pour profils non techniques</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Should</td>
+<td>Rebuild index contrôlé (token + lock)</td>
+<td>Livre</td>
+</tr>
+<tr>
+<td>Could</td>
+<td>Évaluation avancée (RAGAS complet)</td>
+<td>À planifier</td>
+</tr>
+<tr>
+<td>Could</td>
+<td>Personnalisation utilisateur multi-tours</td>
+<td>Hors scope POC</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Contraintes métier, réglementaires et opérationnelles :</strong></p>
+<ul>
+<li>géographie : Occitanie,</li>
+<li>temporalité : évènements récents + à venir,</li>
+<li>sécurité : clés API via <code>.env</code> uniquement,</li>
+<li>robustesse : gestion des erreurs et cas limites,</li>
+<li>opérationnel : POC demoable localement + Docker,</li>
+<li>gouvernance : pas d'historique conversationnel dans ce POC.</li>
+</ul>
+<hr>
+<h3>2. Audit de la solution data existante (ou proposée)</h3>
+<h4>2.1 Solution actuelle ou proposée</h4>
+<p>Il n'existait pas de solution RAG industrialisée préexistante. Le projet a donc construit une solution cible progressive :</p>
+<p><strong>Outils et technologies :</strong></p>
+<ul>
+<li>collecte : OpenAgenda API,</li>
+<li>traitement : Python + pandas,</li>
+<li>indexation sémantique : FAISS CPU,</li>
+<li>orchestration RAG : LangChain,</li>
+<li>génération : Mistral,</li>
+<li>exposition : Flask API,</li>
+<li>exploitation : CLI unifiée <code>app.py</code>, tests <code>pytest</code>, conteneurisation Docker.</li>
+</ul>
+<p><strong>Processus d'exploitation des données (pipeline) :</strong></p>
+<ol>
+<li>
+<code>app.py build-dataset</code> -&gt; collecte multi-agendas + nettoyage,</li>
+<li>
+<code>app.py build-index</code> -&gt; chunking + embeddings + index FAISS,</li>
+<li>
+<code>app.py ask-local</code> ou <code>POST /ask</code> -&gt; retrieval + génération,</li>
+<li>
+<code>POST /rebuild</code> -&gt; reload/rebuild contrôlé,</li>
+<li>
+<code>app.py bootstrap</code> -&gt; préparation bout-en-bout.</li>
+</ol>
+<h4>2.2 Évaluation de l'adéquation aux besoins</h4>
+<table>
+<thead><tr>
+<th>Critère</th>
+<th>Observation</th>
+<th>Niveau</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Pertinence métier</td>
+<td>Réponses ancrées sur des évènements réels + sources</td>
+<td>Bon</td>
+</tr>
+<tr>
+<td>Fiabilité</td>
+<td>Gestion d'erreurs API, fallback anti-hallucination, validation schema</td>
+<td>Bon</td>
+</tr>
+<tr>
+<td>Scalabilité POC</td>
+<td>Rebuild local rapide, index persistant, cache mémoire</td>
+<td>Correct</td>
+</tr>
+<tr>
+<td>Coût</td>
+<td>Stack open-source majoritaire, coût LLM pilotable</td>
+<td>Bon</td>
+</tr>
+<tr>
+<td>Exploitabilité</td>
+<td>API claire + script de démo + logs + Docker</td>
+<td>Bon</td>
+</tr>
+<tr>
+<td>Évaluation qualité</td>
+<td>Smoke eval disponible, mais coverage sémantique à approfondir</td>
+<td>À renforcer</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Écarts et limites identifiés :</strong></p>
+<ul>
+<li>métadonnées inégales selon agendas (URLs parfois absentes),</li>
+<li>distribution géographique variable selon l'activité des agendas,</li>
+<li>évaluation encore "smoke" (utile, mais non exhaustive).</li>
+</ul>
+<p><strong>Visualisation simplifiée du flux existant/proposé :</strong></p>
+<p></p>
+<div class="mermaid" data-theme="default">
+flowchart LR
+    A[OpenAgenda] --&gt; B[Collecte multi-agendas]
+    B --&gt; C[Nettoyage + normalisation]
+    C --&gt; D[Dataset traité]
+    D --&gt; E[Embeddings + FAISS]
+    E --&gt; F[Retriever RAG]
+    F --&gt; G[LLM Mistral]
+    G --&gt; H[API Flask]
+    H --&gt; I[Usage métier / démo]
+</div>
+<script>
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+</script><hr>
+<h3>3. Identification d'une solution technique cible</h3>
+<h4>3.1 Comparatif d'approches techniques</h4>
+<table>
+<thead><tr>
+<th>Approche</th>
+<th>Avantages</th>
+<th>Inconvénients</th>
+<th>Décision</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Recherche par mots-clés + règles</td>
+<td>Simple, peu coûteux</td>
+<td>Peu robuste au langage naturel</td>
+<td>Non retenue</td>
+</tr>
+<tr>
+<td>LLM seul (sans retrieval)</td>
+<td>Réponses fluides</td>
+<td>Risque d'invention, faible traçabilité</td>
+<td>Non retenue</td>
+</tr>
+<tr>
+<td>Fine-tuning complet</td>
+<td>Potentiel qualitatif élevé</td>
+<td>Coût/temps de données et entraînement</td>
+<td>Non retenue (POC)</td>
+</tr>
+<tr>
+<td><strong>RAG (FAISS + LLM)</strong></td>
+<td>Équilibre fiabilité / vitesse / coût, sources explicables</td>
+<td>Dépend de la qualité des données</td>
+<td><strong>Retenue</strong></td>
+</tr>
+</tbody>
+</table>
+<h4>3.2 Architecture cible</h4>
+<p>Architecture cible retenue :</p>
+<ul>
+<li>source externe (OpenAgenda),</li>
+<li>couche data prep (schema stable),</li>
+<li>couche indexation (FAISS persistante),</li>
+<li>couche génération (Mistral guidée par prompt),</li>
+<li>couche service (API Flask + gouvernance opératoire).</li>
+</ul>
+<h4>3.3 Facteurs clés de succès et points de vigilance</h4>
+<p><strong>Facteurs clés de succès :</strong></p>
+<ul>
+<li>discipline sur la qualité des données,</li>
+<li>prompt anti-hallucination explicite,</li>
+<li>API simple, stable, sécurisée,</li>
+<li>tests relançables et reproductibilité.</li>
+</ul>
+<p><strong>Points de vigilance :</strong></p>
+<ul>
+<li>performance réelle sous charge (au-delà du POC),</li>
+<li>suivi de qualité continue des sources OpenAgenda,</li>
+<li>maturité de l'évaluation métrique avant scale.</li>
+</ul>
+<h4>3.4 Méthodologie d'identification et priorisation des cas d'usage</h4>
+<p>Approche retenue : priorisation Impact métier x Effort technique.</p>
+<table>
+<thead><tr>
+<th>Cas d'usage</th>
+<th>Impact métier</th>
+<th>Effort</th>
+<th>Priorité</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Reco d'évènements généraliste (<code>/ask</code>)</td>
+<td>Élevé</td>
+<td>Moyen</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Supervision API (<code>/health</code>, <code>/metadata</code>)</td>
+<td>Élevé</td>
+<td>Faible</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Rebuild opérationnel (<code>/rebuild</code>)</td>
+<td>Moyen/élevé</td>
+<td>Moyen</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Interface web non technique (<code>/app</code>)</td>
+<td>Moyen</td>
+<td>Faible</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>Évaluation avancée continue</td>
+<td>Élevé</td>
+<td>Moyen/élevé</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>Personnalisation utilisateur fine</td>
+<td>Élevé</td>
+<td>Élevé</td>
+<td>P3</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3>4. Appui stratégique et méthodologique</h3>
+<h4>4.1 Proposition de démarche projet</h4>
+<p><strong>Cadre méthodologique :</strong> CRISP-DM adapté + itérations courtes de type Agile.</p>
+<p><strong>Roadmap de mise en œuvre (ce qui a été réalisé) :</strong></p>
+<ol>
+<li>Cadrage &amp; risques (scope Occitanie, contraintes secrets, périmètre API),</li>
+<li>Préparation data (collecte + nettoyage + schema),</li>
+<li>Indexation sémantique (chunking + embeddings + FAISS),</li>
+<li>Moteur RAG (retrieval + génération + fallback),</li>
+<li>API Flask robuste (validation, erreurs, auth, rebuild lock),</li>
+<li>Packaging et démo (CLI unifiée + Docker + scripts de vérification).</li>
+</ol>
+<p><strong>Responsabilités (vision simplifiée) :</strong></p>
+<ul>
+<li>Sponsor technique : priorisation et acceptation,</li>
+<li>Data/ML : conception pipeline et RAG,</li>
+<li>Produit/métier : validation des scénarios utilisateur,</li>
+<li>QA/projet : vérification des tests et des livrables.</li>
+</ul>
+<h4>4.2 Aide à la prise de décision</h4>
+<p><strong>Synthèse risques / opportunités :</strong></p>
+<table>
+<thead><tr>
+<th>Type</th>
+<th>Élément</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Opportunité</td>
+<td>Assistant explicable et testable rapidement</td>
+</tr>
+<tr>
+<td>Opportunité</td>
+<td>Réutilisation API directe par produit/marketing</td>
+</tr>
+<tr>
+<td>Risque</td>
+<td>Qualité source hétérogène selon agendas</td>
+</tr>
+<tr>
+<td>Risque</td>
+<td>Surconfiance si métriques non enrichies</td>
+</tr>
+<tr>
+<td>Risque</td>
+<td>Coût variable si usage LLM non piloté</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Scénarios budgétaires (ordre de grandeur, 3 mois) :</strong></p>
+<ul>
+<li>Scénario A - POC local renforcé : 1 personne part-time, coût infra faible.</li>
+<li>Scénario B - Pilote métier restreint : 1 data/ML + 1 backend part-time + supervision qualité.</li>
+<li>Scénario C - Pré-industrialisation : équipe pluridisciplinaire (data, backend, produit, QA), observabilité et MLOps renforcés.</li>
+</ul>
+<p><strong>KPI de succès recommandés :</strong></p>
+<ul>
+<li>
+<p>KPI business :</p>
+</li>
+<li>
+<p>taux d'utilisation de <code>/ask</code>,</p>
+</li>
+<li>taux de réponses jugées utiles par les testeurs métier,</li>
+<li>temps moyen de réponse ressenti acceptable.</li>
+<li>
+<p>KPI techniques :</p>
+</li>
+<li>
+<p>latence médiane API,</p>
+</li>
+<li>taux d'erreur 4xx/5xx,</li>
+<li>couverture tests,</li>
+<li>part de réponses avec sources exploitables.</li>
+</ul>
+<p><strong>Impacts et conformité dans les recommandations :</strong></p>
+<ul>
+<li>Éthique : éviter l'invention (fallback explicite),</li>
+<li>Légal/réglementaire : aucune clé en dur, secrets hors git,</li>
+<li>Organisationnel : clarifier la responsabilité "qualité data source",</li>
+<li>Business : privilégier fiabilité et explicabilité avant extension fonctionnelle.</li>
+</ul>
+<hr>
+<h3>5. Contrôle et suivi du projet</h3>
+<h4>5.1 Tableau de bord de pilotage</h4>
+<p><strong>Indicateurs de suivi recommandés :</strong></p>
+<ul>
+<li>Délai : avancement par étape (data, index, rag, api, démo),</li>
+<li>Qualité livraison : statut tests (<code>pytest</code>),</li>
+<li>Qualité data : nombre d'évènements valides / invalides,</li>
+<li>Qualité réponse : score smoke eval + revue métier,</li>
+<li>Opérations : disponibilité API (<code>/health</code>) et metadata index (<code>/metadata</code>).</li>
+</ul>
+<p><strong>Fréquence et mode de reporting :</strong></p>
+<ul>
+<li>quotidien en phase de construction (point court),</li>
+<li>hebdomadaire en phase de stabilisation,</li>
+<li>revue de sprint avec démonstration fonctionnelle.</li>
+</ul>
+<h4>5.2 Outils et process de suivi</h4>
+<p><strong>Suivi expérimentation / delivery :</strong></p>
+<ul>
+<li>CLI unifiée <code>app.py</code> pour standardiser les exécutions,</li>
+<li>logs (<code>logs/</code>) pour diagnostics,</li>
+<li>rapport smoke eval (<code>reports/smoke_eval_report.json</code>) pour comparaison rapide,</li>
+<li>tests unitaires centralisés (<code>tests/tests.py</code>).</li>
+</ul>
+<p><strong>Gestion projet &amp; collaboration :</strong></p>
+<ul>
+<li>gestion de versions Git avec branches explicites par étape,</li>
+<li>Definition of Done : code + tests + doc + commande de vérification,</li>
+<li>trace des décisions techniques dans README + rapports de soutenance.</li>
+</ul>
+<hr>
+<h3>6. Conclusion &amp; recommandations</h3>
+<h4>6.1 Récapitulatif des décisions prises</h4>
+<ul>
+<li>Choix RAG retenu pour allier pertinence métier et explicabilité,</li>
+<li>Scope Occitanie pour maîtriser la qualité dans le POC,</li>
+<li>API Flask choisie pour exposition simple et robuste,</li>
+<li>Priorité donnée à la reproductibilité et aux tests relançables.</li>
+</ul>
+<h4>6.2 Perspectives d'évolution</h4>
+<ul>
+<li>enrichir la qualité source (notamment URLs),</li>
+<li>étendre l'évaluation au-delà du smoke test,</li>
+<li>renforcer l'observabilité (SLA, tracing, qualité par territoire),</li>
+<li>ouvrir progressivement à des cas d'usage plus personnalisés.</li>
+</ul>
+<h4>6.3 Prochaines étapes recommandées (30 / 60 / 90 jours)</h4>
+<p><strong>J+30 :</strong></p>
+<ul>
+<li>stabiliser qualité data et tableau de bord KPI minimum</li>
+<li>finaliser protocole d'évaluation métier/technique.</li>
+</ul>
+<p><strong>J+60 :</strong></p>
+<ul>
+<li>lancer pilote métier avec panel d'utilisateurs internes,</li>
+<li>ajuster prompts, filtres et priorisation retrieval.</li>
+</ul>
+<p><strong>J+90 :</strong></p>
+<ul>
+<li>arbitrer passage pré-industrialisation (coût/risque/ROI),</li>
+<li>formaliser plan cible MLOps et gouvernance data.</li>
+</ul>
+<hr>
+<h3>Synthèse</h3>
+<p>Le projet a transformé un besoin métier clair - recommander vite et fiable des évènements culturels - en un POC RAG complet, testable et exploitable via API. Le choix technique est cohérent avec le niveau de maturité visé : robuste, explicable, reproductible. La principale limite n'est pas l'architecture, mais la qualité hétérogène de certaines données source ; c'est donc le premier levier d'amélioration pour maximiser la valeur business lors du passage à l'échelle.</p>
+</div>
+</section><!-- Section --><section><header><h2>Restons en contact</h2>
+						</header><div class="content">
+							<p>Concrete data projects, clearly explained, with code and results available.</p>
+							<ul class="actions">
+<li>
+										<a href="../../../posts/portfolio/" class="button primary large">View portfolio</a>
+									</li>
+									<li>
+										<a href="mailto:stephane.manet@pm.me" class="button large">Contact me</a>
+									</li>
+							</ul>
+</div>
+						<footer><ul class="items">
+<li>
+									<h3>Email</h3>
+									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+								</li>
+								<li>
+									<h3>Réseaux sociaux</h3>
+									<ul class="icons">
+<li>
+												<a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin">
+													<span class="label">LinkedIn</span>
+												</a>
+											</li>
+											<li>
+												<a href="https://www.github.com/stephmnt" target="_blank" rel="noopener noreferrer" class="icon brands fa-github">
+													<span class="label">GitHub</span>
+												</a>
+											</li>
+									</ul>
+</li>
+							</ul></footer></section><!-- Copyright --><div class="copyright">
+<p>© 2026. A <a href="https://html5up.net">HTML5 UP</a> fork for Nikola by <a href="https://github.com/stephmnt">Stephane Manet</a></p>
+<p><i class="fab fa-python"></i> + <i class="fas fa-mug-hot"></i> + <i class="fas fa-heart"></i> = <i class="fas fa-code"></i></p>
+</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../../assets/js/jquery.min.js"></script><script src="../../../assets/js/jquery.scrolly.min.js"></script><script src="../../../assets/js/browser.min.js"></script><script src="../../../assets/js/breakpoints.min.js"></script><script src="../../../assets/js/util.js"></script><script src="../../../assets/js/main.js"></script>
+</body>
+</html>

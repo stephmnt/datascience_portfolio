@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<title>Diagramme de compétences | Datascience Portfolio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="theme-color" content="#83F9D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="../../site.webmanifest">
+<link rel="icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="stylesheet" href="../../assets/css/main.css">
+</head>
+<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+<!-- Intro -->
+	<section class="intro"><header><h1>Diagramme de compétences</h1>
+			<ul class="actions">
+<li>
+					<a href="../../" class="arrow scrolly arrow-rotate-90" style="height: 4rem; width: 6rem; display: inline-block; position: relative; line-height: 4rem; text-align: center; font-size: 2.2rem;">
+						<span class="label">Retour accueil</span>
+					</a>
+				</li>
+				<li><a href="#first" class="arrow scrolly"><span class="label">Suivant</span></a></li>
+			</ul></header><div class="content">
+			<p style="padding-top:14rem;"></p>
+		</div>
+	</section><section id="first"><header><h2>Diagramme de compétences</h2>
+    </header><div class="content">
+        <style>
+.diagramme-competences-plot {
+    width: min(1700px, 96vw);
+    max-width: 96vw;
+    margin-left: calc((60rem - min(1700px, 96vw)) / 2);
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+}
+
+.diagramme-competences-plot .plotly-graph-div,
+.diagramme-competences-plot .plot-container,
+.diagramme-competences-plot .svg-container,
+.diagramme-competences-plot .main-svg {
+    width: 1700px !important;
+    max-width: none !important;
+}
+
+@media screen and (max-width: 64rem) {
+    .diagramme-competences-plot {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .diagramme-competences-plot .plotly-graph-div,
+    .diagramme-competences-plot .plot-container,
+    .diagramme-competences-plot .svg-container,
+    .diagramme-competences-plot .main-svg {
+        width: 1180px !important;
+    }
+}
+</style>
+<div class="diagramme-competences-plot">
+    <div>                        
+        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script><script charset="utf-8" src="https://cdn.plot.ly/plotly-3.3.1.min.js" integrity="sha256-4rD3fugVb/nVJYUv5Ky3v+fYXoouHaBSP20WIJuEiWg=" crossorigin="anonymous"></script><div id="diagramme-competences-flux" class="plotly-graph-div" style="height:1200px; width:1700px;">
+
+        </div>            
+            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("diagramme-competences-flux")) {                    Plotly.newPlot(                        "diagramme-competences-flux",                        [{"arrangement":"snap","link":{"color":["rgba(44, 160, 44, 0.38)","rgba(44, 160, 44, 0.38)","rgba(148, 103, 189, 0.38)","rgba(57, 59, 121, 0.38)","rgba(44, 160, 44, 0.38)","rgba(148, 103, 189, 0.38)","rgba(227, 119, 194, 0.38)","rgba(23, 190, 207, 0.38)","rgba(127, 127, 127, 0.38)","rgba(44, 160, 44, 0.38)","rgba(31, 119, 180, 0.38)","rgba(127, 127, 127, 0.38)","rgba(188, 189, 34, 0.38)","rgba(214, 39, 40, 0.38)","rgba(140, 86, 75, 0.38)","rgba(44, 160, 44, 0.38)","rgba(227, 119, 194, 0.38)","rgba(127, 127, 127, 0.38)","rgba(23, 190, 207, 0.38)","rgba(188, 189, 34, 0.38)","rgba(255, 127, 14, 0.38)","rgba(23, 190, 207, 0.38)","rgba(127, 127, 127, 0.38)","rgba(227, 119, 194, 0.38)","rgba(57, 59, 121, 0.38)","rgba(255, 127, 14, 0.38)","rgba(188, 189, 34, 0.38)","rgba(227, 119, 194, 0.38)","rgba(31, 119, 180, 0.38)","rgba(82, 84, 163, 0.38)","rgba(227, 119, 194, 0.38)","rgba(57, 59, 121, 0.38)","rgba(44, 160, 44, 0.38)","rgba(148, 103, 189, 0.38)","rgba(23, 190, 207, 0.38)","rgba(127, 127, 127, 0.38)","rgba(188, 189, 34, 0.38)","rgba(227, 119, 194, 0.38)","rgba(31, 119, 180, 0.38)","rgba(57, 59, 121, 0.38)","rgba(82, 84, 163, 0.38)","rgba(57, 59, 121, 0.38)","rgba(82, 84, 163, 0.38)","rgba(31, 119, 180, 0.38)","rgba(227, 119, 194, 0.38)","rgba(57, 59, 121, 0.38)","rgba(82, 84, 163, 0.38)","rgba(31, 119, 180, 0.38)","rgba(57, 59, 121, 0.38)","rgba(82, 84, 163, 0.38)","rgba(31, 119, 180, 0.38)","rgba(57, 59, 121, 0.38)","rgba(188, 189, 34, 0.38)"],"source":[1,1,2,10,1,2,9,6,7,1,0,7,8,3,4,1,9,7,6,8,5,6,7,9,10,5,8,9,0,11,9,10,1,2,6,7,8,9,0,10,11,10,11,0,9,10,11,0,10,11,0,10,8],"target":[12,13,13,13,14,14,14,15,15,15,15,16,16,17,17,17,17,18,18,18,19,19,19,19,19,20,20,20,21,21,21,21,22,22,22,22,22,22,23,23,23,24,24,24,24,25,25,25,26,26,26,27,27],"value":[2,2,2,1,2,2,1,2,1,1,1,2,2,3,2,1,1,2,1,2,3,1,1,1,1,2,2,2,5,2,1,1,2,2,1,1,2,1,3,2,1,4,4,4,1,3,4,2,3,3,3,3,2]},"node":{"color":["rgba(31, 119, 180, 0.85)","rgba(44, 160, 44, 0.85)","rgba(148, 103, 189, 0.85)","rgba(214, 39, 40, 0.85)","rgba(140, 86, 75, 0.85)","rgba(255, 127, 14, 0.85)","rgba(23, 190, 207, 0.85)","rgba(127, 127, 127, 0.85)","rgba(188, 189, 34, 0.85)","rgba(227, 119, 194, 0.85)","rgba(57, 59, 121, 0.85)","rgba(82, 84, 163, 0.85)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)","rgba(220,220,220,0.95)"],"label":["Cadrage & pilotage projet IA\nbesoin métier, KPI, risques, parties prenantes","Analyse & préparation\ndes données","Modélisation supervisée\nclassification, régression, scoring","Apprentissage semi-supervisé\npseudo-labellisation, labels faibles","Non supervisé & deep learning\nclustering, embeddings, réseaux pré-entraînés","NLP, LLM & RAG\nIA générative","Déploiement ML\nAPI, applications, BDD","MLOps\nDocker, CI\u002fCD, MLflow","Évaluation & monitoring\nmétriques, logs, drift","Compréhension des modèles\ninterprétabilité, biais, limites","Pédagogie & vulgarisation\ntransmission","Transformation & adoption\naccompagnement","P2 — Données éducatives","P3 — Consommation bâtiments","P4 — Classification automatique","P5 — Déploiement ML \u002f BDD","P6 — MLOps 1\u002f2","P7 — Images médicales\nsemi-supervisé","P8 — MLOps 2\u002f2","P9 — Système RAG","P10 — Évaluation LLM","P11 — Cadrage projet IA","P12 — Recommandation de prix\nmulti-sources","P13 — Portfolio DS ML","Consultant formateur\nfreelance","Ingénieur pédagogique\nVille de Paris","Formateur numérique\nEPN Relais 59","Jury FPA\nMinistère du Travail"],"line":{"color":"rgba(80,80,80,0.8)","width":0.6},"pad":16,"thickness":18},"type":"sankey"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"text":"Diagramme de flux — Compétences transverses, projets de formation et expériences professionnelles"},"font":{"size":12,"family":"Arial"},"margin":{"l":240,"r":60,"t":90,"b":30},"width":1700,"height":1200},                        {"responsive": true}                    )                };            </script>
+</div>
+</div>
+    </div>
+</section><!-- Section --><section><header><h2>Restons en contact</h2>
+						</header><div class="content">
+							<p>Des projets data concrets, expliqués clairement, avec le code et les résultats disponibles.</p>
+							<ul class="actions">
+<li>
+										<a href="../../posts/portfolio/" class="button primary large">Voir le portfolio</a>
+									</li>
+									<li>
+										<a href="mailto:stephane.manet@pm.me" class="button large">Me contacter</a>
+									</li>
+							</ul>
+</div>
+						<footer><ul class="items">
+<li>
+									<h3>Email</h3>
+									<a href="mailto:stephane.manet@pm.me">stephane.manet@pm.me</a>
+								</li>
+								<li>
+									<h3>Réseaux sociaux</h3>
+									<ul class="icons">
+<li>
+												<a href="https://www.linkedin.com/in/stephanemanet" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin">
+													<span class="label">LinkedIn</span>
+												</a>
+											</li>
+											<li>
+												<a href="https://www.github.com/stephmnt" target="_blank" rel="noopener noreferrer" class="icon brands fa-github">
+													<span class="label">GitHub</span>
+												</a>
+											</li>
+									</ul>
+</li>
+							</ul></footer></section><!-- Copyright --><div class="copyright">
+<p>© 2026. A <a href="https://html5up.net">HTML5 UP</a> fork for Nikola by <a href="https://github.com/stephmnt">Stephane Manet</a></p>
+<p><i class="fab fa-python"></i> + <i class="fas fa-mug-hot"></i> + <i class="fas fa-heart"></i> = <i class="fas fa-code"></i></p>
+</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="../../assets/js/jquery.min.js"></script><script src="../../assets/js/jquery.scrolly.min.js"></script><script src="../../assets/js/browser.min.js"></script><script src="../../assets/js/breakpoints.min.js"></script><script src="../../assets/js/util.js"></script><script src="../../assets/js/main.js"></script>
+</body>
+</html>

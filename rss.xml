@@ -1,0 +1,2094 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="assets/xml/rss.xsl" media="all"?><rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Datascience Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/</link><description>Le portfolio de tous mes projets data science</description><atom:link href="https://stephmnt.github.io/datascience_portfolio/rss.xml" rel="self" type="application/rss+xml"></atom:link><language>fr</language><copyright>Contents © 2026 &lt;a href="mailto:stephane.manet@pm.me"&gt;Stéphane Manet&lt;/a&gt; </copyright><lastBuildDate>Mon, 25 May 2026 14:21:28 GMT</lastBuildDate><generator>Nikola (getnikola.com)</generator><docs>http://blogs.law.harvard.edu/tech/rss</docs><item><title>Optimiser le rendement agricole</title><link>https://stephmnt.github.io/datascience_portfolio/posts/optimisation-des-rendements-agricoles/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h2&gt;Rapport de conduite de projet&lt;/h2&gt;
+&lt;h3&gt;Optimisation des rendements agricoles&lt;/h3&gt;
+&lt;h4&gt;Description courte&lt;/h4&gt;
+&lt;p&gt;Ce projet vise à aider un exploitant agricole à estimer le rendement attendu d’une culture et à comparer plusieurs cultures possibles pour une même parcelle.&lt;br&gt;
+La solution repose sur deux modèles complémentaires : un modèle historique et un modèle local basé sur les conditions de terrain.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;1. Résumé exécutif&lt;/h3&gt;
+&lt;p&gt;Le projet &lt;code&gt;optimisation-des-rendements-agricoles&lt;/code&gt; part d’une question simple, mais importante pour le monde agricole : comment aider un agriculteur à choisir une culture en s’appuyant sur des données plutôt que sur une intuition seule ?&lt;/p&gt;
+&lt;p&gt;Au départ, l’ambition était large. Il était question d’optimiser les rendements, mais aussi d’évaluer la rentabilité. L’audit des données a rapidement montré une limite forte : aucune donnée financière fiable n’était disponible. Le projet ne contenait ni prix de vente, ni coûts de production, ni coûts logistiques, ni indicateurs de marge.&lt;/p&gt;
+&lt;p&gt;La décision structurante a donc été de recentrer le projet sur une promesse solide : estimer et comparer des rendements agricoles, sans prétendre calculer une rentabilité économique complète.&lt;/p&gt;
+&lt;p&gt;La solution finale combine deux approches :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;un modèle historique, appelé &lt;code&gt;P1&lt;/code&gt;, qui estime un rendement de référence à partir du pays et de la culture ;&lt;/li&gt;
+&lt;li&gt;un modèle local, appelé &lt;code&gt;P23&lt;/code&gt;, qui ajuste cette estimation selon les conditions de parcelle : sol, météo, irrigation, engrais, pluie, température et durée avant récolte.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La logique de prédiction est volontairement explicable :&lt;/p&gt;
+&lt;div class="code"&gt;&lt;pre class="code literal-block"&gt;rendement final = P1 + (P3 - P2)
+````
+
+Autrement dit, le système part d’un rendement historique de référence, puis applique un ajustement local lié aux conditions concrètes de la parcelle.
+
+Le prototype est complet : il dispose d’une API FastAPI, d’une interface Streamlit, d’un suivi d’expériences avec MLflow, d’une conteneurisation Docker et de workflows GitHub Actions pour tester, entraîner et déployer l’application.
+
+---
+
+## 2. Contexte et besoin métier
+
+### 2.1 Le point de départ
+
+L’histoire du projet commence chez Agritech Answers, une entreprise spécialisée dans l’aide à la décision agricole. L’objectif est de transformer une demande métier en prototype Data &amp;amp; ML utilisable.
+
+Le besoin vient d’un problème concret : un agriculteur doit choisir quoi cultiver sur une parcelle, alors que le rendement dépend de nombreux facteurs. Certains sont globaux, comme le pays, l’historique agricole ou la culture choisie. D’autres sont locaux, comme la météo, l’irrigation, le type de sol ou l’usage d’engrais.
+
+La question métier peut donc être formulée ainsi :
+
+&amp;gt; Pour une parcelle donnée, quelle culture semble offrir le meilleur rendement estimé ?
+
+Le projet ne cherche pas à remplacer l’expertise agricole. Il apporte un outil d’aide à la décision, lisible, reproductible et fondé sur des données.
+
+### 2.2 Les utilisateurs concernés
+
+Le projet s’adresse principalement à quatre profils.
+
+| Partie prenante                    | Attente principale                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| Agriculteur ou conseiller agricole | Obtenir une estimation simple et compréhensible                           |
+| Lead Data Scientist                | Vérifier la méthode, la robustesse et la traçabilité                      |
+| Équipe technique                   | Disposer d’une API, d’une interface et d’un déploiement reproductibles    |
+| Évaluateur projet                  | Retrouver les preuves attendues : MLflow, pipeline, CI/CD, rapport métier |
+
+### 2.3 Le besoin reformulé
+
+Après analyse, le besoin a été reformulé autour de deux fonctionnalités principales :
+
+1. prédire le rendement d’une culture choisie dans un contexte donné ;
+2. recommander un classement de cultures possibles pour une parcelle.
+
+Cette reformulation est importante. Elle permet d’éviter une promesse trop large et de rester aligné avec les données réellement disponibles.
+
+Le projet parle donc de rendement agricole, pas de profit financier.
+
+---
+
+## 3. Audit des données et de la solution envisagée
+
+### 3.1 Les données disponibles
+
+L’audit a mis en évidence deux familles de données.
+
+| Source                           | Rôle dans le projet                                       | Granularité                |
+| -------------------------------- | --------------------------------------------------------- | -------------------------- |
+| `data/simulation/crop_yield.csv` | Mesurer l’effet des conditions locales de parcelle        | Observation simulée locale |
+| `data/historique/yield.csv`      | Construire la cible historique de rendement               | Pays / culture / année     |
+| `data/historique/rainfall.csv`   | Ajouter la pluie annuelle                                 | Pays / année               |
+| `data/historique/temp.csv`       | Ajouter la température annuelle                           | Pays / année               |
+| `data/historique/pesticides.csv` | Ajouter les intrants pesticides                           | Pays / année               |
+| `data/dataset_consolide.csv`     | Servir de base consolidée pour la modélisation historique | Pays / culture / année     |
+
+Le premier enseignement important est que ces données ne décrivent pas exactement le même niveau de réalité.
+
+Les données historiques racontent une évolution globale : un rendement par pays, culture et année.
+Les données de simulation décrivent plutôt une situation locale : type de sol, météo, irrigation, engrais et conditions de récolte.
+
+### 3.2 La décision d’audit
+
+Une fusion directe de toutes les données aurait été séduisante, mais fragile. Elle aurait donné l’impression de construire un grand modèle unique, alors que les sources n’ont pas la même granularité.
+
+Le projet a donc fait un choix plus prudent : ne pas forcer une jointure artificielle.
+
+La solution conserve deux briques séparées :
+
+- une brique historique pour estimer une base de rendement ;
+- une brique locale pour ajuster cette base selon les conditions de parcelle.
+
+Cette décision rend la solution plus claire, plus défendable et plus facile à expliquer.
+
+---
+
+## 4. Solution technique retenue
+
+### 4.1 Les options étudiées
+
+Trois options principales ont été envisagées.
+
+| Option                                        | Avantage                       | Limite                                                   | Décision    |
+| --------------------------------------------- | ------------------------------ | -------------------------------------------------------- | ----------- |
+| Un modèle global unique                       | Simple à présenter             | Fusion fragile entre données différentes                 | Non retenue |
+| Une recommandation directe par classification | Résultat immédiat              | Moins explicable et peu adaptée sans données économiques | Non retenue |
+| Deux modèles complémentaires                  | Respecte la nature des données | Architecture un peu plus complexe                        | Retenue     |
+
+L’option retenue est donc une architecture à deux modèles.
+
+### 4.2 Architecture générale
+
+```mermaid
+flowchart TD
+    A[Données brutes] --&amp;gt; B[Préparation et consolidation]
+    B --&amp;gt; C[Modèle historique P1]
+    B --&amp;gt; D[Modèle local P23]
+    C --&amp;gt; E[Tracking MLflow]
+    D --&amp;gt; E
+    E --&amp;gt; F[Promotion des artefacts runtime]
+    F --&amp;gt; G[API FastAPI]
+    G --&amp;gt; H[Interface Streamlit]
+    H --&amp;gt; I[Estimation et recommandation de rendement]
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Cette architecture suit une logique simple : préparer les données, entraîner les modèles, tracer les expériences, promouvoir les artefacts validés, puis servir les prédictions dans une application.&lt;/p&gt;
+&lt;h4&gt;4.3 Composants principaux&lt;/h4&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Composant&lt;/th&gt;
+&lt;th&gt;Rôle&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;notebooks/preparation.ipynb&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Exploration, nettoyage, ACP et préparation des données&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scripts/experience_1.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Entraînement et optimisation du modèle historique&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scripts/train_simulation_model.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Entraînement du modèle local&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scripts/promote_registered_model.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Export des modèles MLflow vers les artefacts runtime&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;scripts/validate_runtime.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Vérification du chargement applicatif des modèles&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;main.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;API FastAPI&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;streamlit/src/streamlit_app.py&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Interface utilisateur&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;.github/workflows/deploy_hf_space.yml&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Déploiement applicatif&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;.github/workflows/train_full_pipeline.yml&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Pipeline d’entraînement manuel&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;hr&gt;
+&lt;h3&gt;5. Modélisation&lt;/h3&gt;
+&lt;h4&gt;5.1 Modèle historique P1&lt;/h4&gt;
+&lt;p&gt;Le modèle &lt;code&gt;P1&lt;/code&gt; sert à estimer un rendement de référence à partir des données historiques.&lt;/p&gt;
+&lt;p&gt;Il répond à la question suivante :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Quel rendement peut-on attendre pour une culture donnée dans un pays donné, au regard de l’historique disponible ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Le modèle retenu est un &lt;code&gt;RandomForestRegressor&lt;/code&gt;.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Élément&lt;/th&gt;
+&lt;th&gt;Valeur&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Modèle&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;RandomForestRegressor&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Run MLflow&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;random_forest_search_01&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Registered model&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;p1_historical_pipeline&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Version exportée&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;7&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Métriques principales :&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Métrique&lt;/th&gt;
+&lt;th style="text-align: right;"&gt;Valeur&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;RMSE test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;2.0593&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;MAE test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.8026&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;R² test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.9468&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RMSE validation croisée moyenne&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;1.5814&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;R² validation croisée moyen&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.9623&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Ces résultats indiquent que le modèle historique capte correctement les grandes tendances de rendement dans les données disponibles.&lt;/p&gt;
+&lt;h4&gt;5.2 Modèle local P23&lt;/h4&gt;
+&lt;p&gt;Le modèle &lt;code&gt;P23&lt;/code&gt; sert à mesurer l’effet des conditions locales de parcelle.&lt;/p&gt;
+&lt;p&gt;Il répond à une autre question :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Comment les conditions concrètes de terrain modifient-elles le rendement attendu ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Le modèle retenu est une &lt;code&gt;LinearRegression&lt;/code&gt;.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Élément&lt;/th&gt;
+&lt;th&gt;Valeur&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Modèle&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;LinearRegression&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Registered model&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;p23_simulation_pipeline&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Version exportée&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;6&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Métriques principales :&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Métrique&lt;/th&gt;
+&lt;th style="text-align: right;"&gt;Valeur&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;RMSE test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.4967&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;MAE test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.3961&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;R² test&lt;/td&gt;
+&lt;td style="text-align: right;"&gt;&lt;code&gt;0.9140&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Ce modèle local n’a pas le même rôle que &lt;code&gt;P1&lt;/code&gt;. Il ne remplace pas le modèle historique. Il apporte un ajustement lié aux conditions de parcelle.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;6. Méthode projet&lt;/h3&gt;
+&lt;h4&gt;6.1 Une démarche inspirée de CRISP-DM&lt;/h4&gt;
+&lt;p&gt;La conduite du projet suit une démarche proche de CRISP-DM, adaptée à un prototype MLOps.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Phase&lt;/th&gt;
+&lt;th&gt;Objectif&lt;/th&gt;
+&lt;th&gt;Livrable principal&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Compréhension métier&lt;/td&gt;
+&lt;td&gt;Clarifier le besoin et les limites&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;ressources/mission.md&lt;/code&gt;, &lt;code&gt;ressources/questions.md&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Compréhension des données&lt;/td&gt;
+&lt;td&gt;Identifier les sources et les granularités&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;notebooks/preparation.ipynb&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Préparation&lt;/td&gt;
+&lt;td&gt;Nettoyer et consolider les données&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;data/dataset_consolide.csv&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Modélisation&lt;/td&gt;
+&lt;td&gt;Entraîner, comparer et tracer les modèles&lt;/td&gt;
+&lt;td&gt;Scripts d’entraînement, MLflow&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Évaluation&lt;/td&gt;
+&lt;td&gt;Vérifier les métriques et la robustesse&lt;/td&gt;
+&lt;td&gt;Artefacts, tests, métadonnées&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Déploiement&lt;/td&gt;
+&lt;td&gt;Rendre le prototype utilisable&lt;/td&gt;
+&lt;td&gt;FastAPI, Streamlit, Docker, Hugging Face&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4&gt;6.2 Le récit du projet&lt;/h4&gt;
+&lt;p&gt;Le projet a avancé par étapes.&lt;/p&gt;
+&lt;p&gt;Au début, l’enjeu était de comprendre les données. La tentation aurait été de tout fusionner rapidement pour produire un premier modèle. Mais cette approche aurait créé une solution difficile à justifier.&lt;/p&gt;
+&lt;p&gt;La première décision forte a donc été d’accepter la complexité des données. Les données historiques et les données locales ne racontaient pas la même chose. Plutôt que de masquer cette différence, le projet l’a utilisée comme base d’architecture.&lt;/p&gt;
+&lt;p&gt;Ensuite, un premier modèle a été construit pour obtenir une estimation historique du rendement. Ce modèle donne un point de départ robuste.&lt;/p&gt;
+&lt;p&gt;Puis un second modèle a été ajouté pour intégrer les conditions de parcelle. Cette étape permet de rapprocher la prédiction de la situation concrète de l’utilisateur.&lt;/p&gt;
+&lt;p&gt;Enfin, la solution a été transformée en application : une API pour servir les prédictions, une interface pour les rendre accessibles, et une chaîne MLOps pour suivre les modèles et sécuriser le déploiement.&lt;/p&gt;
+&lt;p&gt;Le projet raconte donc une progression claire :&lt;/p&gt;
+&lt;div class="code"&gt;&lt;pre class="code literal-block"&gt;comprendre les données
+-&amp;gt; refuser une fusion fragile
+-&amp;gt; construire deux modèles complémentaires
+-&amp;gt; rendre la prédiction explicable
+-&amp;gt; livrer une application démontrable
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr&gt;
+&lt;h3&gt;7. Aide à la décision&lt;/h3&gt;
+&lt;p&gt;L’application permet à l’utilisateur de :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;choisir un pays ;&lt;/li&gt;
+&lt;li&gt;choisir une culture ;&lt;/li&gt;
+&lt;li&gt;renseigner les conditions de parcelle ;&lt;/li&gt;
+&lt;li&gt;obtenir un rendement estimé ;&lt;/li&gt;
+&lt;li&gt;comparer plusieurs cultures possibles ;&lt;/li&gt;
+&lt;li&gt;consulter un classement des cultures les plus prometteuses en rendement.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La recommandation produite n’est pas une décision automatique. Elle doit être lue comme une aide au raisonnement.&lt;/p&gt;
+&lt;p&gt;Par exemple, une culture peut apparaître intéressante en rendement, mais rester moins pertinente en pratique si elle demande des semences indisponibles, des coûts élevés, une main-d’œuvre spécifique ou un marché local peu favorable.&lt;/p&gt;
+&lt;p&gt;La solution reste donc volontairement prudente : elle compare des rendements estimés, mais ne conclut pas sur la rentabilité économique.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;8. Suivi, pilotage et industrialisation&lt;/h3&gt;
+&lt;h4&gt;8.1 Indicateurs de pilotage&lt;/h4&gt;
+&lt;p&gt;Le projet est piloté à travers des preuves concrètes dans le dépôt.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Axe de suivi&lt;/th&gt;
+&lt;th&gt;Preuve associée&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Fonctionnel&lt;/td&gt;
+&lt;td&gt;API, interface Streamlit, Space Hugging Face&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Données&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;data/dataset_consolide.csv&lt;/code&gt;, artefacts d’analyse&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Modèle&lt;/td&gt;
+&lt;td&gt;Runs MLflow, métriques, registered models&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Qualité logicielle&lt;/td&gt;
+&lt;td&gt;Tests &lt;code&gt;pytest&lt;/code&gt;, structure des scripts&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Reproductibilité&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;requirements.txt&lt;/code&gt;, &lt;code&gt;Dockerfile&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Déploiement&lt;/td&gt;
+&lt;td&gt;GitHub Actions, workflow de déploiement&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4&gt;8.2 Rôle de MLflow&lt;/h4&gt;
+&lt;p&gt;MLflow sert de carnet d’expériences.&lt;/p&gt;
+&lt;p&gt;Il permet de conserver :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;les runs ;&lt;/li&gt;
+&lt;li&gt;les paramètres ;&lt;/li&gt;
+&lt;li&gt;les métriques ;&lt;/li&gt;
+&lt;li&gt;les artefacts ;&lt;/li&gt;
+&lt;li&gt;les modèles enregistrés.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les deux modèles suivis sont :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;p1_historical_pipeline&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;p23_simulation_pipeline&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Cette traçabilité est essentielle pour justifier les choix techniques et éviter qu’un modèle soit promu sans preuve de performance.&lt;/p&gt;
+&lt;h4&gt;8.3 Rôle de GitHub Actions&lt;/h4&gt;
+&lt;p&gt;GitHub Actions permet de séparer deux moments du cycle de vie :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;l’entraînement ;&lt;/li&gt;
+&lt;li&gt;le déploiement.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le workflow de déploiement ne réentraîne pas les modèles à chaque modification. Il teste, construit et déploie l’application à partir d’artefacts déjà validés.&lt;/p&gt;
+&lt;p&gt;Cette séparation est importante. Elle évite de rendre le déploiement dépendant d’un entraînement potentiellement long, coûteux ou instable.&lt;/p&gt;
+&lt;p&gt;Le pipeline complet peut être lancé avec :&lt;/p&gt;
+&lt;div class="code"&gt;&lt;pre class="code literal-block"&gt;python3&lt;span class="w"&gt; &lt;/span&gt;scripts/run_full_pipeline.py
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Il orchestre :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;la préparation des données ;&lt;/li&gt;
+&lt;li&gt;l’entraînement du modèle historique ;&lt;/li&gt;
+&lt;li&gt;l’entraînement ou la réutilisation du modèle local ;&lt;/li&gt;
+&lt;li&gt;l’enregistrement MLflow ;&lt;/li&gt;
+&lt;li&gt;la promotion des modèles runtime ;&lt;/li&gt;
+&lt;li&gt;la validation applicative.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;h3&gt;9. Résultats métier&lt;/h3&gt;
+&lt;p&gt;Le prototype répond à deux questions principales.&lt;/p&gt;
+&lt;p&gt;Première question :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Pour cette culture, dans ce pays et avec ces conditions de parcelle, quel rendement peut être estimé ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Deuxième question :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Parmi les cultures supportées, lesquelles semblent les plus intéressantes en rendement pour cette parcelle ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;L’analyse exploratoire a aussi permis de confirmer plusieurs intuitions métier :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;la pluie joue un rôle structurant ;&lt;/li&gt;
+&lt;li&gt;la température apporte une information complémentaire ;&lt;/li&gt;
+&lt;li&gt;la durée avant récolte influence le résultat local ;&lt;/li&gt;
+&lt;li&gt;l’irrigation, l’engrais, le type de sol et la météo modifient le rendement estimé.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La valeur du projet ne se limite donc pas à un score de modèle. Elle réside dans la construction d’une chaîne complète :&lt;/p&gt;
+&lt;div class="code"&gt;&lt;pre class="code literal-block"&gt;données -&amp;gt; modèles -&amp;gt; API -&amp;gt; interface -&amp;gt; recommandation de rendement
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr&gt;
+&lt;h3&gt;10. Risques, limites et réponses apportées&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Sujet&lt;/th&gt;
+&lt;th&gt;Risque&lt;/th&gt;
+&lt;th&gt;Réponse projet&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Rentabilité&lt;/td&gt;
+&lt;td&gt;Faire croire à un calcul de profit&lt;/td&gt;
+&lt;td&gt;Recentrage explicite sur le rendement&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Données&lt;/td&gt;
+&lt;td&gt;Fusionner des sources incompatibles&lt;/td&gt;
+&lt;td&gt;Séparation entre modèle historique et modèle local&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Modèle&lt;/td&gt;
+&lt;td&gt;Surinterpréter les métriques&lt;/td&gt;
+&lt;td&gt;Documentation des limites et des métriques&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Recommandation&lt;/td&gt;
+&lt;td&gt;Recommander hors domaine connu&lt;/td&gt;
+&lt;td&gt;Limitation aux couples pays / culture supportés&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Déploiement&lt;/td&gt;
+&lt;td&gt;Casser l’application après évolution&lt;/td&gt;
+&lt;td&gt;Tests, Docker, validation runtime&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Industrialisation&lt;/td&gt;
+&lt;td&gt;Dépendance au notebook de préparation&lt;/td&gt;
+&lt;td&gt;Exécution headless via script dédié&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Les principales limites actuelles sont les suivantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;absence de données financières ;&lt;/li&gt;
+&lt;li&gt;impossibilité de calculer une marge ou un profit ;&lt;/li&gt;
+&lt;li&gt;préparation encore partiellement dépendante d’un notebook ;&lt;/li&gt;
+&lt;li&gt;analyse SHAP locale, mais pas encore d’analyse globale complète ;&lt;/li&gt;
+&lt;li&gt;validation croisée structurée pour &lt;code&gt;P1&lt;/code&gt;, mais pas encore pour &lt;code&gt;P23&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;recommandations limitées aux cultures et pays supportés par les données.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Ces limites ne bloquent pas la démonstration. Elles définissent plutôt les prochaines étapes pour passer d’un prototype à un outil plus industrialisé.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;11. Recommandations&lt;/h3&gt;
+&lt;p&gt;Pour poursuivre le projet, les recommandations sont les suivantes :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;intégrer des données économiques pour passer du rendement à la marge ;&lt;/li&gt;
+&lt;li&gt;transformer progressivement &lt;code&gt;preparation.ipynb&lt;/code&gt; en script Python natif ;&lt;/li&gt;
+&lt;li&gt;renforcer l’évaluation du modèle &lt;code&gt;P23&lt;/code&gt; avec validation croisée ;&lt;/li&gt;
+&lt;li&gt;ajouter des seuils automatiques de qualité avant promotion d’un modèle ;&lt;/li&gt;
+&lt;li&gt;mettre en place un monitoring de production : dérive des données, erreurs API, temps de réponse ;&lt;/li&gt;
+&lt;li&gt;produire une documentation utilisateur courte pour expliquer comment lire une recommandation ;&lt;/li&gt;
+&lt;li&gt;enrichir les données avec des informations plus locales : région, type d’exploitation, saison, prix de marché.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;h3&gt;12. Conclusion&lt;/h3&gt;
+&lt;p&gt;Le projet &lt;code&gt;optimisation-des-rendements-agricoles&lt;/code&gt; a suivi une trajectoire cohérente : partir d’un besoin agricole concret, analyser les données disponibles, accepter leurs limites, puis construire une solution explicable et déployable.&lt;/p&gt;
+&lt;p&gt;La décision la plus importante a été de ne pas promettre plus que ce que les données permettent. Le prototype n’optimise pas une rentabilité financière complète. Il aide à comparer des cultures sur la base du rendement estimé.&lt;/p&gt;
+&lt;p&gt;Cette approche rend le projet plus crédible. Elle montre qu’un bon projet Data &amp;amp; ML ne consiste pas seulement à entraîner un modèle performant. Il consiste aussi à formuler correctement le problème, à respecter les données, à expliquer les choix techniques et à livrer une solution utilisable.&lt;/p&gt;
+&lt;p&gt;Le prototype est donc prêt pour une démonstration métier et pour une discussion d’industrialisation.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/optimisation-des-rendements-agricoles/</guid><pubDate>Tue, 12 May 2026 22:00:01 GMT</pubDate></item><item><title>RAG : fiabiliser un assistant intelligent</title><link>https://stephmnt.github.io/datascience_portfolio/posts/rag-assistant-hybride-usage-metier/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h2&gt;Rapport de conduite de projet&lt;/h2&gt;
+&lt;h3&gt;Fiabiliser un assistant RAG NBA pour un usage métier&lt;/h3&gt;
+&lt;p&gt;Ce projet commence comme beaucoup de projets data appliqués : avec une promesse forte et un prototype encore fragile.&lt;/p&gt;
+&lt;p&gt;SportSee dispose d’un assistant capable de répondre à certaines questions sur des données NBA. Le prototype est encourageant, mais il ne suffit pas encore pour un usage métier. Les coachs et analystes n’attendent pas seulement une réponse "plausible". Ils ont besoin d’une réponse utile, traçable, reproductible et défendable.&lt;/p&gt;
+&lt;p&gt;L’objectif du projet a donc été reformulé de manière simple : transformer un prototype RAG intéressant en un système compréhensible, testable et pilotable.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation de l’organisation et du contexte&lt;/h4&gt;
+&lt;p&gt;SportSee est présentée comme une startup spécialisée dans l’IA appliquée à l’analyse de la performance sportive. Son positionnement se situe à l’intersection de trois mondes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;la donnée sportive structurée ;&lt;/li&gt;
+&lt;li&gt;les archives textuelles d’analyse ;&lt;/li&gt;
+&lt;li&gt;l’intelligence artificielle générative au service des équipes métiers.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le contexte est celui d’une organisation agile, orientée produit, avec une maturité data intermédiaire :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;point fort : l’entreprise a déjà un prototype, un corpus, et un cas d’usage métier clair ;&lt;/li&gt;
+&lt;li&gt;point faible : le prototype n’est pas encore assez robuste pour une mise en production ou une diffusion à d’autres clubs ;&lt;/li&gt;
+&lt;li&gt;enjeu stratégique : gagner du temps d’analyse, fiabiliser les réponses, et rendre le système crédible pour des utilisateurs non techniques.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le projet ne porte donc pas seulement sur la performance du modèle. Il porte sur la confiance dans la chaîne complète : données, retrieval, SQL, génération, évaluation et documentation.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Le besoin métier a été reconstitué à partir de plusieurs sources :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;le cadrage de mission ;&lt;/li&gt;
+&lt;li&gt;les échanges fictifs avec Sarah, Data Scientist de l’équipe ;&lt;/li&gt;
+&lt;li&gt;les exemples de questions métier fournis dans le scénario ;&lt;/li&gt;
+&lt;li&gt;l’audit du prototype existant et de son comportement réel.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les parties prenantes principales sont les suivantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Sarah, Data Scientist, qui porte la fiabilisation du prototype ;&lt;/li&gt;
+&lt;li&gt;l’équipe R&amp;amp;D, qui maintient l’assistant ;&lt;/li&gt;
+&lt;li&gt;les coachs, analystes vidéo et préparateurs physiques, futurs utilisateurs ;&lt;/li&gt;
+&lt;li&gt;plus largement, les décideurs métiers qui doivent juger si l’outil est assez fiable pour être utilisé.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les besoins ont été hiérarchisés en trois niveaux.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Priorité&lt;/th&gt;
+&lt;th&gt;Besoin&lt;/th&gt;
+&lt;th&gt;Pourquoi c’est critique&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Haute&lt;/td&gt;
+&lt;td&gt;Répondre correctement aux questions textuelles et chiffrées&lt;/td&gt;
+&lt;td&gt;C’est la valeur métier directe du produit&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Haute&lt;/td&gt;
+&lt;td&gt;Mesurer la qualité réelle du système&lt;/td&gt;
+&lt;td&gt;Sans évaluation, impossible de décider d’un passage en production&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Haute&lt;/td&gt;
+&lt;td&gt;Reproduire l’environnement et documenter le pipeline&lt;/td&gt;
+&lt;td&gt;Condition de continuité, de maintenance et de crédibilité&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Moyenne&lt;/td&gt;
+&lt;td&gt;Visualiser et suivre les performances dans le temps&lt;/td&gt;
+&lt;td&gt;Important pour le pilotage et la soutenance&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Moyenne&lt;/td&gt;
+&lt;td&gt;Mieux gérer les cas limites et les questions hybrides&lt;/td&gt;
+&lt;td&gt;Important pour la robustesse métier&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Faible à moyenne&lt;/td&gt;
+&lt;td&gt;Industrialiser davantage l’observabilité et le monitoring&lt;/td&gt;
+&lt;td&gt;Utile à moyen terme, moins critique que la fiabilité de base&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Les contraintes identifiées sont à la fois métiers, techniques et opérationnelles :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;les réponses doivent rester compréhensibles pour un profil non technique ;&lt;/li&gt;
+&lt;li&gt;les données textuelles et structurées doivent être cohérentes entre elles ;&lt;/li&gt;
+&lt;li&gt;certaines données attendues ne sont pas présentes dans le corpus, ce qui impose au système de savoir dire "je ne sais pas" ;&lt;/li&gt;
+&lt;li&gt;la chaîne dépend d’outils externes, notamment pour la génération et, potentiellement, pour l’OCR ;&lt;/li&gt;
+&lt;li&gt;le projet doit rester démontrable dans un repo clair, simple à exécuter et à auditer.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;2. Audit de la solution data existante&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;Au départ, la solution ressemble à un prototype RAG classique enrichi progressivement :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;un corpus de documents indexés dans FAISS ;&lt;/li&gt;
+&lt;li&gt;des données NBA structurées chargées dans SQLite ;&lt;/li&gt;
+&lt;li&gt;un assistant capable de combiner retrieval et génération ;&lt;/li&gt;
+&lt;li&gt;un outillage SQL pour les questions chiffrées ;&lt;/li&gt;
+&lt;li&gt;un script d’évaluation basé sur RAGAS ;&lt;/li&gt;
+&lt;li&gt;une interface Streamlit et une API FastAPI.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le pipeline actuel peut être résumé ainsi :&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart LR
+    A[Sources Excel et PDF] --&amp;gt; B[Préparation des données]
+    B --&amp;gt; C[Index FAISS]
+    B --&amp;gt; D[Base SQLite]
+    C --&amp;gt; E[Service RAG + SQL]
+    D --&amp;gt; E
+    E --&amp;gt; F[API / Streamlit]
+    E --&amp;gt; G[Évaluation RAGAS]
+    G --&amp;gt; H[Notebook de rapport]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;p&gt;Cette architecture a un mérite important : elle couvre tout le cycle de vie d’un système data appliqué, de l’ingestion jusqu’à l’analyse des résultats.&lt;/p&gt;
+&lt;h4&gt;2.2 Évaluation de l’adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;L’audit montre un constat nuancé.&lt;/p&gt;
+&lt;p&gt;La solution répond bien à plusieurs attentes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;elle traite des questions documentaires ;&lt;/li&gt;
+&lt;li&gt;elle sait mobiliser une base SQL pour les questions quantitatives ;&lt;/li&gt;
+&lt;li&gt;elle dispose d’un dispositif d’évaluation explicite ;&lt;/li&gt;
+&lt;li&gt;elle a été structurée pour devenir plus reproductible et plus lisible.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Mais les écarts initiaux étaient réels :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;le prototype était plus convaincant sur les questions simples que sur les cas hybrides ;&lt;/li&gt;
+&lt;li&gt;les performances globales n’étaient pas suffisantes pour conclure à une robustesse générale ;&lt;/li&gt;
+&lt;li&gt;l’évaluation devait être mieux reliée à des cas d’usage métier ;&lt;/li&gt;
+&lt;li&gt;l’observabilité et la validation des flux de données demandaient à être renforcées ;&lt;/li&gt;
+&lt;li&gt;l’OCR s’est révélé instable sur la stack locale, ce qui a obligé à privilégier un mode de fonctionnement sûr plutôt qu’un mode "plus ambitieux mais fragile".&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les critères retenus pour juger l’adéquation de la solution ont été :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;la pertinence des réponses ;&lt;/li&gt;
+&lt;li&gt;la fidélité au contexte ;&lt;/li&gt;
+&lt;li&gt;la qualité du retrieval ;&lt;/li&gt;
+&lt;li&gt;la capacité à répondre aux questions chiffrées ;&lt;/li&gt;
+&lt;li&gt;la traçabilité du pipeline ;&lt;/li&gt;
+&lt;li&gt;la facilité de réexécution du projet ;&lt;/li&gt;
+&lt;li&gt;la lisibilité du livrable pour un tiers.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;En synthèse, la solution est adaptée à une phase de démonstration sérieuse et d’audit méthodologique, mais elle n’est pas encore une solution de production industrialisée.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;3. Identification d’une solution technique cible&lt;/h3&gt;
+&lt;p&gt;Le choix de la cible n’a pas été guidé par la sophistication maximale. Il a été guidé par l’équilibre entre utilité métier, robustesse et clarté.&lt;/p&gt;
+&lt;p&gt;Trois approches ont été comparées.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Approche&lt;/th&gt;
+&lt;th&gt;Avantages&lt;/th&gt;
+&lt;th&gt;Limites&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;RAG seul&lt;/td&gt;
+&lt;td&gt;Simple à comprendre, bon pour la recherche documentaire&lt;/td&gt;
+&lt;td&gt;Faible dès qu’il faut comparer ou calculer des chiffres&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;SQL seul&lt;/td&gt;
+&lt;td&gt;Très bon pour les données structurées et les agrégations&lt;/td&gt;
+&lt;td&gt;Incapable de répondre seul sur les contenus textuels&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RAG + SQL + évaluation&lt;/td&gt;
+&lt;td&gt;Meilleure couverture métier, plus défendable, plus pilotable&lt;/td&gt;
+&lt;td&gt;Plus complexe à concevoir et à tester&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;La solution cible retenue est donc une architecture hybride :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;retrieval documentaire pour les contenus textuels ;&lt;/li&gt;
+&lt;li&gt;base SQL pour les chiffres ;&lt;/li&gt;
+&lt;li&gt;service partagé pour orchestrer les deux ;&lt;/li&gt;
+&lt;li&gt;Pydantic pour valider les objets qui circulent ;&lt;/li&gt;
+&lt;li&gt;RAGAS et métriques complémentaires pour objectiver la qualité ;&lt;/li&gt;
+&lt;li&gt;notebook de rapport pour interpréter les résultats.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Architecture cible&lt;/h4&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+    U[Utilisateur métier] --&amp;gt; A[API / Streamlit]
+    A --&amp;gt; B[Service RAGService]
+    B --&amp;gt; C[Retriever FAISS]
+    B --&amp;gt; D[Tool SQL]
+    B --&amp;gt; E[Mistral]
+    C --&amp;gt; F[Corpus documentaire]
+    D --&amp;gt; G[SQLite NBA]
+    B --&amp;gt; H[Réponse contrôlée]
+    H --&amp;gt; I[Évaluation RAGAS]
+    I --&amp;gt; J[Rapport et pilotage]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;h4&gt;Facteurs clés de succès&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;garder un service partagé unique pour éviter les comportements divergents ;&lt;/li&gt;
+&lt;li&gt;valider explicitement les flux de données ;&lt;/li&gt;
+&lt;li&gt;traiter séparément les cas simples, complexes, bruités et hybrides ;&lt;/li&gt;
+&lt;li&gt;documenter les limites plutôt que masquer les échecs ;&lt;/li&gt;
+&lt;li&gt;rester sobre techniquement pour garder un repo compréhensible.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Points de vigilance&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;les métriques automatiques ne suffisent pas à elles seules ;&lt;/li&gt;
+&lt;li&gt;le mapping langage naturel vers SQL reste une zone sensible ;&lt;/li&gt;
+&lt;li&gt;la qualité du corpus conditionne fortement la qualité des réponses ;&lt;/li&gt;
+&lt;li&gt;l’OCR n’est pas aujourd’hui un composant stable sur la stack locale ;&lt;/li&gt;
+&lt;li&gt;un bon score moyen peut masquer des échecs critiques sur certains cas d’usage.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Priorisation des cas d’usage&lt;/h4&gt;
+&lt;p&gt;La priorisation des cas d’usage s’est faite selon deux axes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;valeur métier ;&lt;/li&gt;
+&lt;li&gt;difficulté technique.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les cas d’usage prioritaires sont :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;retrouver une information simple sur une équipe ou un joueur ;&lt;/li&gt;
+&lt;li&gt;répondre à une question chiffrée fiable ;&lt;/li&gt;
+&lt;li&gt;gérer les questions hybrides texte + chiffres ;&lt;/li&gt;
+&lt;li&gt;reconnaître honnêtement les limites du corpus.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;La démarche la plus pertinente pour ce projet est une approche hybride entre CRISP-DM et gestion agile.&lt;/p&gt;
+&lt;p&gt;CRISP-DM apporte un cadre utile :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;compréhension métier ;&lt;/li&gt;
+&lt;li&gt;compréhension des données ;&lt;/li&gt;
+&lt;li&gt;préparation des données ;&lt;/li&gt;
+&lt;li&gt;modélisation ;&lt;/li&gt;
+&lt;li&gt;évaluation ;&lt;/li&gt;
+&lt;li&gt;déploiement.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;L’agilité apporte le rythme :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;itérations courtes ;&lt;/li&gt;
+&lt;li&gt;revue régulière des résultats ;&lt;/li&gt;
+&lt;li&gt;arbitrages rapides entre valeur et risque ;&lt;/li&gt;
+&lt;li&gt;capacité à corriger la documentation et le code en continu.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Roadmap de mise en œuvre&lt;/h4&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Phase&lt;/th&gt;
+&lt;th&gt;Objectif&lt;/th&gt;
+&lt;th&gt;Livrables&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Phase 1&lt;/td&gt;
+&lt;td&gt;Stabiliser l’environnement&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;requirements.txt&lt;/code&gt;, README, arborescence claire&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Phase 2&lt;/td&gt;
+&lt;td&gt;Structurer les données&lt;/td&gt;
+&lt;td&gt;indexation, base SQLite, pipeline d’ingestion&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Phase 3&lt;/td&gt;
+&lt;td&gt;Fiabiliser la chaîne de réponse&lt;/td&gt;
+&lt;td&gt;service partagé, tool SQL, validations&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Phase 4&lt;/td&gt;
+&lt;td&gt;Mesurer objectivement&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;evaluate_ragas.py&lt;/code&gt;, jeux de questions, artefacts&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Phase 5&lt;/td&gt;
+&lt;td&gt;Interpréter et piloter&lt;/td&gt;
+&lt;td&gt;notebook, comparatifs, storytelling de soutenance&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Le projet présente plusieurs opportunités :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;gagner du temps côté analystes ;&lt;/li&gt;
+&lt;li&gt;réduire les réponses arbitraires ou difficiles à justifier ;&lt;/li&gt;
+&lt;li&gt;disposer d’un socle réutilisable pour d’autres sports ou d’autres clubs ;&lt;/li&gt;
+&lt;li&gt;installer une culture de mesure autour des systèmes d’IA générative.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les principaux risques sont :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;surconfiance dans les réponses du modèle ;&lt;/li&gt;
+&lt;li&gt;sous-estimation des cas hybrides ;&lt;/li&gt;
+&lt;li&gt;dépendance à des services externes ;&lt;/li&gt;
+&lt;li&gt;qualité inégale des sources textuelles ;&lt;/li&gt;
+&lt;li&gt;coût de maintenance si l’architecture devient trop complexe.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Scénarios budgétaires indicatifs&lt;/h4&gt;
+&lt;p&gt;Ces estimations sont volontairement simples et servent surtout à la décision.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Scénario&lt;/th&gt;
+&lt;th&gt;Périmètre&lt;/th&gt;
+&lt;th&gt;Coût indicatif&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Minimal&lt;/td&gt;
+&lt;td&gt;usage local, API + notebook + tests&lt;/td&gt;
+&lt;td&gt;faible&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Pilote&lt;/td&gt;
+&lt;td&gt;équipe métier restreinte, suivi mensuel, support basique&lt;/td&gt;
+&lt;td&gt;moyen&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Industrialisation&lt;/td&gt;
+&lt;td&gt;supervision renforcée, monitoring continu, support multi-clubs&lt;/td&gt;
+&lt;td&gt;élevé&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Les principaux postes de coût sont :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;appels API LLM / embeddings ;&lt;/li&gt;
+&lt;li&gt;temps d’ingénierie et de maintenance ;&lt;/li&gt;
+&lt;li&gt;hébergement de l’API et de l’interface ;&lt;/li&gt;
+&lt;li&gt;monitoring et support ;&lt;/li&gt;
+&lt;li&gt;travail de gouvernance documentaire et de qualification des cas de test.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Indicateurs de succès&lt;/h4&gt;
+&lt;p&gt;Les KPI doivent rester lisibles pour les métiers.&lt;/p&gt;
+&lt;p&gt;KPI business :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;temps gagné pour retrouver une information ;&lt;/li&gt;
+&lt;li&gt;taux de réponses jugées utiles par les utilisateurs ;&lt;/li&gt;
+&lt;li&gt;réduction des réponses non exploitables ;&lt;/li&gt;
+&lt;li&gt;fréquence d’usage de l’assistant.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;KPI techniques :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;answer relevancy ;&lt;/li&gt;
+&lt;li&gt;faithfulness ;&lt;/li&gt;
+&lt;li&gt;précision et rappel du retrieval ;&lt;/li&gt;
+&lt;li&gt;latence moyenne ;&lt;/li&gt;
+&lt;li&gt;taux de questions où SQL est correctement mobilisé ;&lt;/li&gt;
+&lt;li&gt;taux de cas limites correctement reconnus comme non couverts.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Impacts éthiques, légaux et organisationnels&lt;/h4&gt;
+&lt;p&gt;Le projet ne manipule pas ici de données médicales sensibles, mais il touche à la performance sportive et à des usages décisionnels. Il faut donc :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;éviter de présenter une réponse générée comme une vérité garantie ;&lt;/li&gt;
+&lt;li&gt;conserver la traçabilité des sources ;&lt;/li&gt;
+&lt;li&gt;prévoir une relecture humaine pour les décisions importantes ;&lt;/li&gt;
+&lt;li&gt;garder une gouvernance claire sur les données utilisées et partagées.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Le projet peut être piloté avec un tableau de bord simple, lisible par un binôme métier / technique.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Axe&lt;/th&gt;
+&lt;th&gt;Indicateurs&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Avancement&lt;/td&gt;
+&lt;td&gt;jalons atteints, scripts livrés, documentation à jour&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Qualité data&lt;/td&gt;
+&lt;td&gt;taux de sources exploitables, complétude du corpus, incidents OCR&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Qualité IA&lt;/td&gt;
+&lt;td&gt;scores RAGAS, métriques retrieval, cas faibles identifiés&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Robustesse&lt;/td&gt;
+&lt;td&gt;tests verts, validations Pydantic, stabilité des runs&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Usage&lt;/td&gt;
+&lt;td&gt;questions fréquentes, retours métier, cas non couverts&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Fréquence recommandée :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;point rapide hebdomadaire en phase de construction ;&lt;/li&gt;
+&lt;li&gt;revue d’évaluation à chaque nouvelle campagne de tests ;&lt;/li&gt;
+&lt;li&gt;point mensuel si le système entre en phase pilote.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;p&gt;Les outils et pratiques déjà cohérents avec le projet sont :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Git et GitHub pour la version du code ;&lt;/li&gt;
+&lt;li&gt;README pour la documentation d’exploitation ;&lt;/li&gt;
+&lt;li&gt;notebook de rapport pour la lecture métier des résultats ;&lt;/li&gt;
+&lt;li&gt;sorties &lt;code&gt;outputs/evaluations/&lt;/code&gt; pour historiser les runs ;&lt;/li&gt;
+&lt;li&gt;Logfire, quand il est activé, pour suivre le comportement du pipeline ;&lt;/li&gt;
+&lt;li&gt;tests et validations Pydantic comme garde-fous de qualité.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le bon process n’est pas de produire plus d’outils. C’est de ritualiser leur usage :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;un lot de questions de référence stable ;&lt;/li&gt;
+&lt;li&gt;une réévaluation après chaque changement important ;&lt;/li&gt;
+&lt;li&gt;une lecture conjointe des scores et des cas d’échec ;&lt;/li&gt;
+&lt;li&gt;une décision explicite sur ce qui est acceptable, fragile ou insuffisant.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;6. Conclusion et recommandations&lt;/h3&gt;
+&lt;p&gt;Ce projet raconte une trajectoire assez classique, mais saine : partir d’un prototype séduisant, puis accepter de le regarder de façon critique pour le rendre crédible.&lt;/p&gt;
+&lt;p&gt;Les décisions structurantes prises dans le projet sont les suivantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;retenir une architecture hybride RAG + SQL ;&lt;/li&gt;
+&lt;li&gt;privilégier la validation et la traçabilité plutôt qu’une complexité inutile ;&lt;/li&gt;
+&lt;li&gt;évaluer le système avec des cas d’usage métier variés ;&lt;/li&gt;
+&lt;li&gt;documenter explicitement les limites ;&lt;/li&gt;
+&lt;li&gt;construire un repo défendable en soutenance comme en reprise technique.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Recommandations prioritaires&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;Stabiliser le corpus réellement exploitable, en particulier sur les documents OCR.&lt;/li&gt;
+&lt;li&gt;Continuer à enrichir les cas de test hybrides et bruités.&lt;/li&gt;
+&lt;li&gt;Conserver une lecture métier des scores, pas seulement une lecture technique.&lt;/li&gt;
+&lt;li&gt;Maintenir un service partagé unique pour éviter les divergences entre API, UI et évaluation.&lt;/li&gt;
+&lt;li&gt;Utiliser les résultats d’évaluation comme outil d’arbitrage produit, pas seulement comme livrable académique.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;Perspectives d’évolution&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;améliorer la couverture OCR avec une solution plus stable ;&lt;/li&gt;
+&lt;li&gt;renforcer le monitoring longitudinal des performances ;&lt;/li&gt;
+&lt;li&gt;ouvrir la voie à d’autres sports ou d’autres sources ;&lt;/li&gt;
+&lt;li&gt;intégrer à terme des visualisations automatiques ou des outils de restitution plus avancés.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;En résumé, le projet ne se limite pas à "faire répondre un LLM". Il montre comment cadrer, mesurer, expliquer et piloter un système d’IA appliqué à un besoin métier concret. C’est cette capacité de pilotage, plus encore que la seule réponse générée, qui donne au projet sa valeur réelle.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+    U[Utilisateur] --&amp;gt;|Question| S[Streamlit MistralChat.py]
+    U --&amp;gt;|HTTP JSON| A[FastAPI api.py]
+
+    S --&amp;gt; G[Service partagé RAGService api.py]
+    A --&amp;gt; G
+
+    G --&amp;gt; R[Retriever FAISS utils/vector_store.py]
+    G --&amp;gt; T[Tool SQL sql_tool.py]
+    G --&amp;gt; M[Mistral API]
+
+    R --&amp;gt; V[(vector_db/faiss_index.idx + document_chunks.pkl)]
+    T --&amp;gt; D[(database/nba_data.db)]
+
+    I[indexer.py] --&amp;gt; V
+    L[load_excel_to_db.py] --&amp;gt; D
+
+    E[evaluate_ragas.py] --&amp;gt; R
+    E --&amp;gt; T
+    E --&amp;gt; M
+    E --&amp;gt; O[(outputs/evaluations)]
+
+    N[rapport_evaluation.ipynb] --&amp;gt; O
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/rag-assistant-hybride-usage-metier/</guid><pubDate>Tue, 17 Mar 2026 23:00:01 GMT</pubDate></item><item><title>RAG : assistant intelligent de recommandations culturelles</title><link>https://stephmnt.github.io/datascience_portfolio/posts/rag-recommandations-culturelles/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h3&gt;0. Fil narratif du projet&lt;/h3&gt;
+&lt;p&gt;Au départ, le besoin exprimé par Jérémy (responsable technique) était très concret : &lt;em&gt;"Pouvons-nous prouver rapidement qu'un assistant intelligent peut recommander des évènements culturels fiables, exploitables via API, sans lancer un grand chantier d'industrialisation ?"&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;La réponse du projet a été volontairement pragmatique :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;construire un POC de bout en bout,&lt;/li&gt;
+&lt;li&gt;limiter le périmètre à l'Occitanie pour garantir la qualité,&lt;/li&gt;
+&lt;li&gt;privilégier la robustesse (tests, logs, reproductibilité),&lt;/li&gt;
+&lt;li&gt;livrer une API utilisable tout de suite par les équipes produit/marketing.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Ce rapport raconte cette démarche, depuis le besoin métier jusqu'aux décisions de pilotage et aux prochaines étapes.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Organisation cible :&lt;/strong&gt; Puls-Events, entreprise technologique orientée recommandations culturelles.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Structure projet :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;métier : équipes produit/marketing qui veulent un assistant testable rapidement,&lt;/li&gt;
+&lt;li&gt;technique : responsable technique + implémentation data/ML,&lt;/li&gt;
+&lt;li&gt;exploitation : besoin d'une API stable pour intégration future.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Enjeux stratégiques liés à la donnée :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;convertir un catalogue d'évènements en expérience conversationnelle utile,&lt;/li&gt;
+&lt;li&gt;réduire le temps entre la question utilisateur et une suggestion actionnable,&lt;/li&gt;
+&lt;li&gt;rendre les réponses auditables (sources, dates, lieux), et non "boîte noire".&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Maturité data &amp;amp; ML (forces / faiblesses) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Forces :&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;accès à une source d'évènements (OpenAgenda),&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;vision produit claire sur l'usage final,&lt;/li&gt;
+&lt;li&gt;capacité à tester via API locale rapidement.&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Faiblesses :&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;qualité hétérogène des métadonnées source (notamment URLs),&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;absence initiale d'un socle ML standardisé,&lt;/li&gt;
+&lt;li&gt;besoin d'un cadre d'évaluation plus riche pour le passage à l'échelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Parties prenantes identifiées :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Jérémy (sponsor technique et arbitrage),&lt;/li&gt;
+&lt;li&gt;équipe produit (parcours utilisateur, cas d'usage),&lt;/li&gt;
+&lt;li&gt;équipe marketing (valeur business des recommandations),&lt;/li&gt;
+&lt;li&gt;data scientist/ML engineer (conception et delivery),&lt;/li&gt;
+&lt;li&gt;évaluateur final (validation des livrables et de la soutenance).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Recueil du besoin (sources utilisées) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;cadrage de mission (&lt;code&gt;ressources/mission.md&lt;/code&gt;),&lt;/li&gt;
+&lt;li&gt;critères de validation (&lt;code&gt;ressources/livrables.md&lt;/code&gt;),&lt;/li&gt;
+&lt;li&gt;itérations techniques et tests automatisés (&lt;code&gt;tests/tests.py&lt;/code&gt;),&lt;/li&gt;
+&lt;li&gt;démonstration locale API (commands &lt;code&gt;app.py run-api&lt;/code&gt;, &lt;code&gt;app.py api-test&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Hiérarchisation des besoins (priorisation MoSCoW) :&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Niveau&lt;/th&gt;
+&lt;th&gt;Besoin&lt;/th&gt;
+&lt;th&gt;Statut projet&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Must&lt;/td&gt;
+&lt;td&gt;Réponse RAG basée sur des sources réelles&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Must&lt;/td&gt;
+&lt;td&gt;API REST &lt;code&gt;/ask&lt;/code&gt;, &lt;code&gt;/rebuild&lt;/code&gt;, &lt;code&gt;/health&lt;/code&gt;, &lt;code&gt;/metadata&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Must&lt;/td&gt;
+&lt;td&gt;Reproductibilité et secrets hors code&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Must&lt;/td&gt;
+&lt;td&gt;Tests unitaires relançables sans réseau&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Should&lt;/td&gt;
+&lt;td&gt;Interface web simple pour profils non techniques&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Should&lt;/td&gt;
+&lt;td&gt;Rebuild index contrôlé (token + lock)&lt;/td&gt;
+&lt;td&gt;Livre&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Could&lt;/td&gt;
+&lt;td&gt;Évaluation avancée (RAGAS complet)&lt;/td&gt;
+&lt;td&gt;À planifier&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Could&lt;/td&gt;
+&lt;td&gt;Personnalisation utilisateur multi-tours&lt;/td&gt;
+&lt;td&gt;Hors scope POC&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;Contraintes métier, réglementaires et opérationnelles :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;géographie : Occitanie,&lt;/li&gt;
+&lt;li&gt;temporalité : évènements récents + à venir,&lt;/li&gt;
+&lt;li&gt;sécurité : clés API via &lt;code&gt;.env&lt;/code&gt; uniquement,&lt;/li&gt;
+&lt;li&gt;robustesse : gestion des erreurs et cas limites,&lt;/li&gt;
+&lt;li&gt;opérationnel : POC demoable localement + Docker,&lt;/li&gt;
+&lt;li&gt;gouvernance : pas d'historique conversationnel dans ce POC.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;Il n'existait pas de solution RAG industrialisée préexistante. Le projet a donc construit une solution cible progressive :&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Outils et technologies :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;collecte : OpenAgenda API,&lt;/li&gt;
+&lt;li&gt;traitement : Python + pandas,&lt;/li&gt;
+&lt;li&gt;indexation sémantique : FAISS CPU,&lt;/li&gt;
+&lt;li&gt;orchestration RAG : LangChain,&lt;/li&gt;
+&lt;li&gt;génération : Mistral,&lt;/li&gt;
+&lt;li&gt;exposition : Flask API,&lt;/li&gt;
+&lt;li&gt;exploitation : CLI unifiée &lt;code&gt;app.py&lt;/code&gt;, tests &lt;code&gt;pytest&lt;/code&gt;, conteneurisation Docker.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Processus d'exploitation des données (pipeline) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;app.py build-dataset&lt;/code&gt; -&amp;gt; collecte multi-agendas + nettoyage,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;app.py build-index&lt;/code&gt; -&amp;gt; chunking + embeddings + index FAISS,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;app.py ask-local&lt;/code&gt; ou &lt;code&gt;POST /ask&lt;/code&gt; -&amp;gt; retrieval + génération,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;POST /rebuild&lt;/code&gt; -&amp;gt; reload/rebuild contrôlé,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;app.py bootstrap&lt;/code&gt; -&amp;gt; préparation bout-en-bout.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;2.2 Évaluation de l'adéquation aux besoins&lt;/h4&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Critère&lt;/th&gt;
+&lt;th&gt;Observation&lt;/th&gt;
+&lt;th&gt;Niveau&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Pertinence métier&lt;/td&gt;
+&lt;td&gt;Réponses ancrées sur des évènements réels + sources&lt;/td&gt;
+&lt;td&gt;Bon&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Fiabilité&lt;/td&gt;
+&lt;td&gt;Gestion d'erreurs API, fallback anti-hallucination, validation schema&lt;/td&gt;
+&lt;td&gt;Bon&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Scalabilité POC&lt;/td&gt;
+&lt;td&gt;Rebuild local rapide, index persistant, cache mémoire&lt;/td&gt;
+&lt;td&gt;Correct&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Coût&lt;/td&gt;
+&lt;td&gt;Stack open-source majoritaire, coût LLM pilotable&lt;/td&gt;
+&lt;td&gt;Bon&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Exploitabilité&lt;/td&gt;
+&lt;td&gt;API claire + script de démo + logs + Docker&lt;/td&gt;
+&lt;td&gt;Bon&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Évaluation qualité&lt;/td&gt;
+&lt;td&gt;Smoke eval disponible, mais coverage sémantique à approfondir&lt;/td&gt;
+&lt;td&gt;À renforcer&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;Écarts et limites identifiés :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;métadonnées inégales selon agendas (URLs parfois absentes),&lt;/li&gt;
+&lt;li&gt;distribution géographique variable selon l'activité des agendas,&lt;/li&gt;
+&lt;li&gt;évaluation encore "smoke" (utile, mais non exhaustive).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Visualisation simplifiée du flux existant/proposé :&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart LR
+    A[OpenAgenda] --&amp;gt; B[Collecte multi-agendas]
+    B --&amp;gt; C[Nettoyage + normalisation]
+    C --&amp;gt; D[Dataset traité]
+    D --&amp;gt; E[Embeddings + FAISS]
+    E --&amp;gt; F[Retriever RAG]
+    F --&amp;gt; G[LLM Mistral]
+    G --&amp;gt; H[API Flask]
+    H --&amp;gt; I[Usage métier / démo]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;hr&gt;
+&lt;h3&gt;3. Identification d'une solution technique cible&lt;/h3&gt;
+&lt;h4&gt;3.1 Comparatif d'approches techniques&lt;/h4&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Approche&lt;/th&gt;
+&lt;th&gt;Avantages&lt;/th&gt;
+&lt;th&gt;Inconvénients&lt;/th&gt;
+&lt;th&gt;Décision&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Recherche par mots-clés + règles&lt;/td&gt;
+&lt;td&gt;Simple, peu coûteux&lt;/td&gt;
+&lt;td&gt;Peu robuste au langage naturel&lt;/td&gt;
+&lt;td&gt;Non retenue&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;LLM seul (sans retrieval)&lt;/td&gt;
+&lt;td&gt;Réponses fluides&lt;/td&gt;
+&lt;td&gt;Risque d'invention, faible traçabilité&lt;/td&gt;
+&lt;td&gt;Non retenue&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Fine-tuning complet&lt;/td&gt;
+&lt;td&gt;Potentiel qualitatif élevé&lt;/td&gt;
+&lt;td&gt;Coût/temps de données et entraînement&lt;/td&gt;
+&lt;td&gt;Non retenue (POC)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;RAG (FAISS + LLM)&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;Équilibre fiabilité / vitesse / coût, sources explicables&lt;/td&gt;
+&lt;td&gt;Dépend de la qualité des données&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Retenue&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h4&gt;3.2 Architecture cible&lt;/h4&gt;
+&lt;p&gt;Architecture cible retenue :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;source externe (OpenAgenda),&lt;/li&gt;
+&lt;li&gt;couche data prep (schema stable),&lt;/li&gt;
+&lt;li&gt;couche indexation (FAISS persistante),&lt;/li&gt;
+&lt;li&gt;couche génération (Mistral guidée par prompt),&lt;/li&gt;
+&lt;li&gt;couche service (API Flask + gouvernance opératoire).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;3.3 Facteurs clés de succès et points de vigilance&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Facteurs clés de succès :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;discipline sur la qualité des données,&lt;/li&gt;
+&lt;li&gt;prompt anti-hallucination explicite,&lt;/li&gt;
+&lt;li&gt;API simple, stable, sécurisée,&lt;/li&gt;
+&lt;li&gt;tests relançables et reproductibilité.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Points de vigilance :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;performance réelle sous charge (au-delà du POC),&lt;/li&gt;
+&lt;li&gt;suivi de qualité continue des sources OpenAgenda,&lt;/li&gt;
+&lt;li&gt;maturité de l'évaluation métrique avant scale.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;3.4 Méthodologie d'identification et priorisation des cas d'usage&lt;/h4&gt;
+&lt;p&gt;Approche retenue : priorisation Impact métier x Effort technique.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Cas d'usage&lt;/th&gt;
+&lt;th&gt;Impact métier&lt;/th&gt;
+&lt;th&gt;Effort&lt;/th&gt;
+&lt;th&gt;Priorité&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Reco d'évènements généraliste (&lt;code&gt;/ask&lt;/code&gt;)&lt;/td&gt;
+&lt;td&gt;Élevé&lt;/td&gt;
+&lt;td&gt;Moyen&lt;/td&gt;
+&lt;td&gt;P1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Supervision API (&lt;code&gt;/health&lt;/code&gt;, &lt;code&gt;/metadata&lt;/code&gt;)&lt;/td&gt;
+&lt;td&gt;Élevé&lt;/td&gt;
+&lt;td&gt;Faible&lt;/td&gt;
+&lt;td&gt;P1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Rebuild opérationnel (&lt;code&gt;/rebuild&lt;/code&gt;)&lt;/td&gt;
+&lt;td&gt;Moyen/élevé&lt;/td&gt;
+&lt;td&gt;Moyen&lt;/td&gt;
+&lt;td&gt;P1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Interface web non technique (&lt;code&gt;/app&lt;/code&gt;)&lt;/td&gt;
+&lt;td&gt;Moyen&lt;/td&gt;
+&lt;td&gt;Faible&lt;/td&gt;
+&lt;td&gt;P2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Évaluation avancée continue&lt;/td&gt;
+&lt;td&gt;Élevé&lt;/td&gt;
+&lt;td&gt;Moyen/élevé&lt;/td&gt;
+&lt;td&gt;P2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Personnalisation utilisateur fine&lt;/td&gt;
+&lt;td&gt;Élevé&lt;/td&gt;
+&lt;td&gt;Élevé&lt;/td&gt;
+&lt;td&gt;P3&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;hr&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Cadre méthodologique :&lt;/strong&gt; CRISP-DM adapté + itérations courtes de type Agile.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Roadmap de mise en œuvre (ce qui a été réalisé) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Cadrage &amp;amp; risques (scope Occitanie, contraintes secrets, périmètre API),&lt;/li&gt;
+&lt;li&gt;Préparation data (collecte + nettoyage + schema),&lt;/li&gt;
+&lt;li&gt;Indexation sémantique (chunking + embeddings + FAISS),&lt;/li&gt;
+&lt;li&gt;Moteur RAG (retrieval + génération + fallback),&lt;/li&gt;
+&lt;li&gt;API Flask robuste (validation, erreurs, auth, rebuild lock),&lt;/li&gt;
+&lt;li&gt;Packaging et démo (CLI unifiée + Docker + scripts de vérification).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;Responsabilités (vision simplifiée) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Sponsor technique : priorisation et acceptation,&lt;/li&gt;
+&lt;li&gt;Data/ML : conception pipeline et RAG,&lt;/li&gt;
+&lt;li&gt;Produit/métier : validation des scénarios utilisateur,&lt;/li&gt;
+&lt;li&gt;QA/projet : vérification des tests et des livrables.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Synthèse risques / opportunités :&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Type&lt;/th&gt;
+&lt;th&gt;Élément&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Opportunité&lt;/td&gt;
+&lt;td&gt;Assistant explicable et testable rapidement&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Opportunité&lt;/td&gt;
+&lt;td&gt;Réutilisation API directe par produit/marketing&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Risque&lt;/td&gt;
+&lt;td&gt;Qualité source hétérogène selon agendas&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Risque&lt;/td&gt;
+&lt;td&gt;Surconfiance si métriques non enrichies&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Risque&lt;/td&gt;
+&lt;td&gt;Coût variable si usage LLM non piloté&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;Scénarios budgétaires (ordre de grandeur, 3 mois) :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Scénario A - POC local renforcé : 1 personne part-time, coût infra faible.&lt;/li&gt;
+&lt;li&gt;Scénario B - Pilote métier restreint : 1 data/ML + 1 backend part-time + supervision qualité.&lt;/li&gt;
+&lt;li&gt;Scénario C - Pré-industrialisation : équipe pluridisciplinaire (data, backend, produit, QA), observabilité et MLOps renforcés.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;KPI de succès recommandés :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;KPI business :&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;taux d'utilisation de &lt;code&gt;/ask&lt;/code&gt;,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;taux de réponses jugées utiles par les testeurs métier,&lt;/li&gt;
+&lt;li&gt;temps moyen de réponse ressenti acceptable.&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;KPI techniques :&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;latence médiane API,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;taux d'erreur 4xx/5xx,&lt;/li&gt;
+&lt;li&gt;couverture tests,&lt;/li&gt;
+&lt;li&gt;part de réponses avec sources exploitables.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Impacts et conformité dans les recommandations :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Éthique : éviter l'invention (fallback explicite),&lt;/li&gt;
+&lt;li&gt;Légal/réglementaire : aucune clé en dur, secrets hors git,&lt;/li&gt;
+&lt;li&gt;Organisationnel : clarifier la responsabilité "qualité data source",&lt;/li&gt;
+&lt;li&gt;Business : privilégier fiabilité et explicabilité avant extension fonctionnelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Indicateurs de suivi recommandés :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Délai : avancement par étape (data, index, rag, api, démo),&lt;/li&gt;
+&lt;li&gt;Qualité livraison : statut tests (&lt;code&gt;pytest&lt;/code&gt;),&lt;/li&gt;
+&lt;li&gt;Qualité data : nombre d'évènements valides / invalides,&lt;/li&gt;
+&lt;li&gt;Qualité réponse : score smoke eval + revue métier,&lt;/li&gt;
+&lt;li&gt;Opérations : disponibilité API (&lt;code&gt;/health&lt;/code&gt;) et metadata index (&lt;code&gt;/metadata&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Fréquence et mode de reporting :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;quotidien en phase de construction (point court),&lt;/li&gt;
+&lt;li&gt;hebdomadaire en phase de stabilisation,&lt;/li&gt;
+&lt;li&gt;revue de sprint avec démonstration fonctionnelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;Suivi expérimentation / delivery :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CLI unifiée &lt;code&gt;app.py&lt;/code&gt; pour standardiser les exécutions,&lt;/li&gt;
+&lt;li&gt;logs (&lt;code&gt;logs/&lt;/code&gt;) pour diagnostics,&lt;/li&gt;
+&lt;li&gt;rapport smoke eval (&lt;code&gt;reports/smoke_eval_report.json&lt;/code&gt;) pour comparaison rapide,&lt;/li&gt;
+&lt;li&gt;tests unitaires centralisés (&lt;code&gt;tests/tests.py&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Gestion projet &amp;amp; collaboration :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;gestion de versions Git avec branches explicites par étape,&lt;/li&gt;
+&lt;li&gt;Definition of Done : code + tests + doc + commande de vérification,&lt;/li&gt;
+&lt;li&gt;trace des décisions techniques dans README + rapports de soutenance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;h4&gt;6.1 Récapitulatif des décisions prises&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Choix RAG retenu pour allier pertinence métier et explicabilité,&lt;/li&gt;
+&lt;li&gt;Scope Occitanie pour maîtriser la qualité dans le POC,&lt;/li&gt;
+&lt;li&gt;API Flask choisie pour exposition simple et robuste,&lt;/li&gt;
+&lt;li&gt;Priorité donnée à la reproductibilité et aux tests relançables.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;6.2 Perspectives d'évolution&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;enrichir la qualité source (notamment URLs),&lt;/li&gt;
+&lt;li&gt;étendre l'évaluation au-delà du smoke test,&lt;/li&gt;
+&lt;li&gt;renforcer l'observabilité (SLA, tracing, qualité par territoire),&lt;/li&gt;
+&lt;li&gt;ouvrir progressivement à des cas d'usage plus personnalisés.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;6.3 Prochaines étapes recommandées (30 / 60 / 90 jours)&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;J+30 :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;stabiliser qualité data et tableau de bord KPI minimum&lt;/li&gt;
+&lt;li&gt;finaliser protocole d'évaluation métier/technique.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;J+60 :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;lancer pilote métier avec panel d'utilisateurs internes,&lt;/li&gt;
+&lt;li&gt;ajuster prompts, filtres et priorisation retrieval.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;J+90 :&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;arbitrer passage pré-industrialisation (coût/risque/ROI),&lt;/li&gt;
+&lt;li&gt;formaliser plan cible MLOps et gouvernance data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h3&gt;Synthèse&lt;/h3&gt;
+&lt;p&gt;Le projet a transformé un besoin métier clair - recommander vite et fiable des évènements culturels - en un POC RAG complet, testable et exploitable via API. Le choix technique est cohérent avec le niveau de maturité visé : robuste, explicable, reproductible. La principale limite n'est pas l'architecture, mais la qualité hétérogène de certaines données source ; c'est donc le premier levier d'amélioration pour maximiser la valeur business lors du passage à l'échelle.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/rag-recommandations-culturelles/</guid><pubDate>Thu, 26 Feb 2026 23:00:01 GMT</pubDate></item><item><title>Classification d’images médicales</title><link>https://stephmnt.github.io/datascience_portfolio/posts/imagerie-medicale-non-semi-supervise/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h2&gt;Rapport de conduite de projet Data &amp;amp; ML — Classification d’images médicales (approches non &amp;amp; semi-supervisées)&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Tout est parti d’un constat simple : en imagerie médicale, on a souvent beaucoup d’images, mais trop peu de temps médical pour tout annoter correctement. Plutôt que d’attendre une campagne de labellisation parfaite, on a choisi une trajectoire progressive. D’abord, on apprend à “résumer” chaque image sous forme d’un vecteur de caractéristiques (des embeddings) afin d’avoir une représentation comparable et réutilisable. Ensuite, on organise les images non labellisées grâce au clustering pour mieux comprendre la structure du dataset. Enfin, on transforme une partie de cet “inconnu” en signal exploitable via des pseudo-labels, afin d’améliorer la classification tout en limitant l’effort d’annotation.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation (organisation et / ou contexte)&lt;/h4&gt;
+&lt;p&gt;Le projet s’inscrit dans le secteur de la santé, plus précisément dans le domaine de l’imagerie médicale. L’objectif opérationnel est de produire un modèle de classification binaire capable de distinguer des images “cancer” de celles considérées comme “normal”. L’enjeu est d’apporter une aide à la décision et au tri, sans se positionner comme un outil de diagnostic automatisé. Le jeu de travail mis à disposition comprend un petit socle d’images labellisées, au total cent images réparties équitablement entre les deux classes, ainsi qu’un volume bien plus important d’images non labellisées, au nombre de 1406. Les images sont homogènes en taille, ce qui simplifie la standardisation du pipeline et limite une partie des problèmes de qualité de données.&lt;/p&gt;
+&lt;p&gt;Sur le plan stratégique, ce projet vise surtout à réduire la dépendance à l’annotation manuelle, qui est coûteuse, rare et lente, tout en capitalisant sur la valeur du stock d’images non labellisées, généralement majoritaire dans les contextes de santé. La démarche retenue prépare également le passage à l’échelle : l’idée est de mettre en place une chaîne qui reste pertinente même lorsque la volumétrie augmente fortement.&lt;/p&gt;
+&lt;p&gt;En termes de maturité data &amp;amp; ML, le projet bénéficie d’une structuration simple des données, déjà séparées entre labellisé et non labellisé, et d’un équilibre des classes du côté labellisé. En revanche, la faiblesse principale reste la taille très limitée du dataset annoté, ce qui fragilise l’évaluation et augmente le risque de sur-apprentissage. Il existe aussi un risque de biais lié à la provenance des images et aux conditions d’acquisition, qui peuvent limiter la généralisation si le contexte de production diffère.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Le cadrage métier s’appuie sur une identification claire des parties prenantes. Les médecins et radiologues apportent la définition clinique du besoin, les critères d’acceptation et la validation des erreurs jugées tolérables. Les responsables métier ou produit cadrent la priorisation, l’intégration dans le parcours de travail et les attentes d’adoption. Les profils data et ML construisent les approches, organisent l’évaluation et pilotent les itérations. Les équipes data engineering assurent la robustesse du pipeline, le stockage et les questions de performance. Enfin, la conformité et la sécurité sont cadrées avec les interlocuteurs DPO et RSSI, compte tenu des exigences RGPD.&lt;/p&gt;
+&lt;p&gt;Le recueil du besoin s’est construit de manière pragmatique à partir de la mission et des livrables attendus, puis consolidé dans une logique d’ateliers de cadrage portant sur les objectifs, les contraintes, les critères de succès et les risques, à la fois techniques et réglementaires. Un PoC itératif a ensuite permis d’objectiver rapidement la faisabilité et de mettre des métriques sur le problème, en complément d’une analyse d’erreurs orientée métier.&lt;/p&gt;
+&lt;p&gt;La hiérarchisation des besoins suit une logique impact/effort. La première priorité est d’obtenir une baseline fiable sur la classification “cancer” versus “normal” avec un pipeline reproductible, de manière à sécuriser la valeur et la trajectoire. La deuxième priorité est d’exploiter les données non labellisées via des mécanismes semi-supervisés pour limiter la charge d’annotation. La troisième priorité est de préparer l’industrialisation, en particulier la traçabilité, le versioning des artefacts et le suivi des performances dans le temps.&lt;/p&gt;
+&lt;p&gt;Pour couvrir l’ensemble des dimensions pertinentes, le projet prend en compte à la fois la performance (avec des métriques adaptées comme la F1-score, la ROC-AUC, la matrice de confusion et un focus sur le rappel de la classe “cancer”), la robustesse (stabilité sur le test, sensibilité aux paramètres, analyse d’erreurs), la gouvernance (traçabilité, conformité, sécurisation, documentation) et l’opérationnel (coûts de calcul, fréquence de mise à jour, intégration dans les pratiques métier).&lt;/p&gt;
+&lt;p&gt;Les contraintes à intégrer sont fortes : il s’agit de données de santé, donc la conformité RGPD impose une logique de minimisation, de contrôle d’accès, de journalisation et de maîtrise de la conservation. De plus, puisque le modèle est une aide, il faut éviter la sur-confiance et privilégier le rappel ou la sensibilité quand le contexte clinique le nécessite, en limitant autant que possible les faux négatifs. Enfin, le projet vise des solutions sobres au début, en privilégiant des représentations réutilisables et des modèles légers avant d’envisager des stratégies plus coûteuses comme le fine-tuning.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée si absence de solution existante)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;L’état initial correspond à un stockage sous forme de fichiers, avec une séparation claire entre images labellisées et non labellisées. Il n’existe pas encore de pipeline ML industrialisé ; le projet a donc pour rôle de bâtir progressivement une solution cible à partir d’un PoC structurant.&lt;/p&gt;
+&lt;p&gt;Les technologies mobilisées dans le PoC reposent sur l’écosystème Python. Elles combinent des bibliothèques de manipulation de données pour structurer et tracer les expériences, un framework deep learning pour extraire des représentations visuelles via un modèle pré-entraîné, et des outils de machine learning classiques pour la réduction de dimension, le clustering et la classification. Les artefacts produits sont exportés dans des formats adaptés au travail itératif afin de réutiliser facilement les features sans devoir recalculer tout le pipeline à chaque itération.&lt;/p&gt;
+&lt;p&gt;Le processus d’exploitation des données s’organise en trois étapes principales. La première étape consiste à réaliser un contrôle qualité, en vérifiant la lecture des images, leur cohérence et quelques statistiques simples. La deuxième étape applique des prétraitements cohérents avec le modèle pré-entraîné choisi. La troisième étape extrait des embeddings à l’aide d’un ResNet18 pré-entraîné, en retirant la couche de classification finale afin de récupérer un vecteur de représentation. Ces embeddings sont ensuite stockés et associés à une traçabilité minimale, incluant le chemin du fichier et, lorsque disponible, le label.&lt;/p&gt;
+&lt;h4&gt;2.2 Évaluation de l’adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;L’adéquation de la solution PoC aux besoins se mesure d’abord sur la performance, avec des métriques robustes et comparables dans le temps, comme la F1-score, la ROC-AUC et les matrices de confusion, en gardant une attention particulière sur la classe “cancer”. Elle se mesure également sur la capacité à passer à l’échelle, puisque l’extraction d’embeddings peut être batchée sur CPU ou GPU et qu’une fois les embeddings stockés, le ré-entraînement de modèles légers devient rapide. Le coût est un critère clé : l’approche privilégie la vitesse et l’itération plutôt que la sophistication prématurée. Enfin, la pertinence métier se juge à travers l’analyse d’erreurs, notamment l’identification et la compréhension des faux négatifs.&lt;/p&gt;
+&lt;p&gt;L’audit met en évidence plusieurs limites. La première est la fragilité statistique liée au faible volume d’images labellisées, ce qui peut gonfler artificiellement les métriques et rendre la généralisation incertaine. La deuxième est que le clustering ne dispose pas de vérité terrain sur l’unlabeled, ce qui impose de s’appuyer sur des indicateurs proxy et des contrôles qualitatifs. La troisième est le risque inhérent à la pseudo-labellisation : si les pseudo-labels sont bruités, ils peuvent amplifier des erreurs au lieu d’aider le modèle.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Visualisation des flux / processus existants (PoC)&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+  A["Images&lt;br&gt;(labellisées + non labellisées)"] --&amp;gt; B["Contrôles qualité (QC)"]
+  B --&amp;gt; C["Extraction d’embeddings&lt;br&gt;(ResNet18 pré-entraîné)&lt;br&gt;→ vecteur 512D"]
+  C --&amp;gt; D["Stockage des features (versionnées)&lt;br&gt;+ traçabilité (path, label)"]
+  D --&amp;gt; E["Modélisation (baseline)"]
+  D --&amp;gt; F["Clustering"]
+  D --&amp;gt; G["Pseudo-labellisation (semi-sup)"]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;hr&gt;
+&lt;h3&gt;3. Identification d’une solution technique cible&lt;/h3&gt;
+&lt;p&gt;La solution technique cible se construit autour d’un comparatif d’approches. La première approche, retenue pour démarrer, consiste à exploiter des embeddings issus d’un modèle pré-entraîné, puis à entraîner un modèle classique de classification. Cette approche est rapide, peu coûteuse, itérative et relativement facile à analyser, ce qui en fait un excellent socle de démarrage. Elle peut néanmoins rencontrer un plafond de performance si les embeddings ne capturent pas suffisamment un signal clinique fin.&lt;/p&gt;
+&lt;p&gt;La deuxième approche, explorée en phase suivante, est la semi-supervision via pseudo-labellisation après clustering. Elle permet d’exploiter la masse de données non labellisées et de réduire l’effort d’annotation. En contrepartie, elle est sensible à la qualité des clusters et peut renforcer des erreurs si la stratégie de filtrage et de confiance n’est pas maîtrisée.&lt;/p&gt;
+&lt;p&gt;La troisième approche, envisagée comme un levier de performance si le ROI est confirmé, consiste à fine-tuner un modèle deep sur les données. Elle offre un potentiel supérieur, mais demande plus de labels, de ressources de calcul et une démarche de validation plus lourde.&lt;/p&gt;
+&lt;p&gt;Dans cette logique, la stratégie recommandée est de démarrer sobrement avec embeddings et modèle léger pour sécuriser rapidement la valeur. La semi-supervision est activée lorsque la qualité des pseudo-labels est suffisante et que l’on dispose d’un cadre d’évaluation robuste. Le fine-tuning est conservé comme un levier d’optimisation, à déclencher après consolidation des données, de la gouvernance et des retours métier.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Schéma d’architecture cible clair&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart TD
+  A["Sources images"] --&amp;gt; B["Ingestion / anonymisation&lt;br&gt;(si nécessaire)"]
+  B --&amp;gt; C["Data Lake"]
+
+  A --&amp;gt; D["QC &amp;amp; Data quality report"]
+  D --&amp;gt; E["Tableau de bord qualité"]
+
+  A --&amp;gt; F["Extraction embeddings (batch)"]
+  F --&amp;gt; G["Feature Store&lt;br&gt;(embeddings)"]
+
+  G --&amp;gt; H["Clustering + pseudo-labels&lt;br&gt;(+ confiance)"]
+  H --&amp;gt; I["Jeux d’entraînement enrichis"]
+
+  I --&amp;gt; J["Training + évaluation"]
+  J --&amp;gt; K["Model Registry"]
+
+  K --&amp;gt; L["Déploiement (API / batch)&lt;br&gt;+ monitoring"]
+  L --&amp;gt; M["Usage métier&lt;br&gt;&amp;amp; amélioration continue"]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;p&gt;Les facteurs clés de succès reposent sur la capacité à versionner les embeddings pour accélérer fortement les itérations, à standardiser les métriques et l’analyse d’erreurs, et à cadrer clairement l’usage clinique comme une aide nécessitant une validation humaine. Les points de vigilance concernent le risque de biais et de dérive dans le temps, le bruit introduit par des pseudo-labels de mauvaise qualité, et la conformité RGPD, qui impose un haut niveau de traçabilité et de sécurisation.&lt;/p&gt;
+&lt;p&gt;La priorisation des cas d’usage suit une logique simple : identifier les points de friction où l’automatisation apporte une valeur immédiate, comme le tri ou le pré-classement, puis évaluer via un PoC sur un périmètre limité avec des métriques cliniques pertinentes, et enfin prioriser en croisant impact, effort, risques et adoption. Dans ce cadre, le tri et le pré-classement constituent généralement un premier jalon à faible friction, l’aide au second avis apporte un impact fort avec un contrôle humain, et l’automatisation plus avancée ne devient réaliste que lorsque la maturité du dispositif et la validation sont suffisantes.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;La démarche projet recommandée combine CRISP-DM pour structurer les étapes et Agile pour livrer par incréments. Le cadrage sert à définir les objectifs, les métriques cibles, la gouvernance et le plan d’évaluation. La phase baseline met en place le pipeline de qualité, l’extraction d’embeddings, un modèle léger et une analyse d’erreurs. La phase semi-supervisée explore le clustering, la pseudo-labellisation, la stratégie de filtrage et la robustesse. L’industrialisation consolide le versioning, le registre de modèles, le monitoring et la documentation. Enfin, l’amélioration continue introduit un plan d’annotation ciblée, des boucles de retour terrain et le passage à l’échelle.&lt;/p&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Du côté des opportunités, l’approche permet d’exploiter rapidement l’unlabeled, d’itérer à faible coût et de construire une trajectoire de scaling. Les risques sont principalement liés au bruit des pseudo-labels, à la fragilité statistique d’un petit dataset labellisé, ainsi qu’aux biais et à la dérive si la distribution des images évolue.&lt;/p&gt;
+&lt;p&gt;Sur le plan budgétaire, un scénario de sobriété peut suffire au démarrage, en s’appuyant sur des embeddings et des modèles légers. Un scénario hybride devient pertinent lorsque l’on met en place la semi-supervision et un plan d’active learning pour maximiser la valeur de l’annotation. Un scénario orienté performance, incluant du fine-tuning et un MLOps plus complet, se justifie surtout lorsque l’usage métier est validé et que la gouvernance est stabilisée.&lt;/p&gt;
+&lt;p&gt;Les indicateurs de succès doivent articuler KPI business et KPI techniques. Côté business, on suivra par exemple le temps gagné, l’acceptation par les utilisateurs, la réduction du backlog et la satisfaction. Côté technique, on suivra la F1-score, la ROC-AUC, le rappel de la classe “cancer”, le taux de faux négatifs et la stabilité des performances dans le temps.&lt;/p&gt;
+&lt;p&gt;Enfin, la prise en compte des impacts éthiques, légaux et organisationnels est structurante. Éthiquement, il faut limiter la sur-confiance et documenter les limites. Légalement, la conformité RGPD impose des règles strictes d’accès, de journalisation et de conservation. Organisationnellement, il faut prévoir la formation, le changement de pratiques et un mécanisme de retour terrain.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Le pilotage du projet repose sur un tableau de bord couvrant le suivi des délais, des jalons, des risques et des dépendances, ainsi que la visibilité sur les coûts, notamment la consommation de calcul lors de l’extraction batch des embeddings et la charge équipe. Le suivi des livrables porte sur la complétude, la qualité, la relecture et la validation. La qualité des données est mesurée par des indicateurs comme le taux d’images valides, la présence de duplicats et des signaux de dérive. Enfin, la qualité modèle est suivie via des métriques standardisées, des matrices de confusion, des métriques centrées “cancer” et des indicateurs de calibration.&lt;/p&gt;
+&lt;p&gt;Le reporting peut être organisé avec un point hebdomadaire pour les décisions et les risques, une revue de fin de sprint centrée sur les résultats et l’analyse d’erreurs, et un comité mensuel de gouvernance incluant sécurité, RGPD et validation.&lt;/p&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;p&gt;Le suivi des expérimentations s’appuie sur un outil de tracking afin de journaliser les runs, les métriques et les paramètres, et sur une discipline de reproductibilité incluant les seeds, les versions de données, le code et les dépendances. La validation est facilitée par une documentation de type “model card” qui décrit l’usage prévu, les limites, les risques et les conditions de surveillance.&lt;/p&gt;
+&lt;p&gt;Le suivi projet et la collaboration reposent sur un outil de backlog et de planification, complété par une base documentaire centralisée. Le code est versionné dans Git, les artefacts data et modèles peuvent être suivis via un outil de versioning adapté, et une CI/CD minimale est recommandée pour sécuriser les tests du pipeline et les validations avant mise en production.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;p&gt;Les choix structurants du projet consistent à démarrer par une approche sobre, combinant embeddings pré-entraînés et modèle léger, puis à explorer la semi-supervision via clustering et pseudo-labellisation pour exploiter efficacement l’unlabeled. En parallèle, la mise en place d’un socle de traçabilité et de versioning est prioritaire pour rendre les itérations rapides et auditables.&lt;/p&gt;
+&lt;p&gt;Les perspectives d’évolution passent par un enrichissement progressif du labellisé, idéalement via une annotation ciblée, par un renforcement de la robustesse grâce à des schémas d’évaluation plus solides et des tests de dérive, et par l’activation du fine-tuning uniquement si le ROI est démontré et si le cadre de validation est suffisamment mature.&lt;/p&gt;
+&lt;p&gt;Les prochaines étapes recommandées s’enchaînent naturellement : consolider l’évaluation et l’analyse d’erreurs avec un focus clinique, améliorer la qualité des pseudo-labels en travaillant les méthodes, les seuils et les contrôles, déployer un socle MLOps minimal pour versionner embeddings et modèles et standardiser le monitoring, lancer une boucle d’active learning pour annoter “ce qui apporte le plus”, puis préparer le passage à l’échelle en industrialisant l’extraction batch et le stockage des représentations.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/imagerie-medicale-non-semi-supervise/</guid><pubDate>Sat, 31 Jan 2026 23:00:01 GMT</pubDate></item><item><title>Credit scoring</title><link>https://stephmnt.github.io/datascience_portfolio/posts/credit-scoring/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h3&gt;Contexte&lt;/h3&gt;
+&lt;h4&gt;Introduction&lt;/h4&gt;
+&lt;p&gt;L’objectif n’était pas seulement d’obtenir de bonnes performances statistiques, mais de livrer un &lt;strong&gt;système de décision fiable, explicable, industrialisé et monitoré&lt;/strong&gt;, capable de répondre aux enjeux du crédit à la consommation.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Problématique métier&lt;/h4&gt;
+&lt;p&gt;Le projet démarre dans un contexte de forte pression opérationnelle.
+Chez &lt;em&gt;Prêt à Dépenser&lt;/em&gt;, l’équipe &lt;strong&gt;Credit Express&lt;/strong&gt; cherche à réduire au maximum le temps de décision pour l’octroi de crédit. En parallèle, la direction des risques est confrontée à une augmentation des impayés.&lt;/p&gt;
+&lt;p&gt;On se retrouve donc face à une tension classique :
+&lt;strong&gt;aller vite&lt;/strong&gt;, sans &lt;strong&gt;augmenter le risque&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Mon rôle a été de trouver un équilibre entre ces deux exigences, en tenant compte de contraintes fortes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;des données déséquilibrées,&lt;/li&gt;
+&lt;li&gt;des obligations de transparence et d’explicabilité,&lt;/li&gt;
+&lt;li&gt;et un besoin de mise en production rapide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le besoin métier est alors clairement formulé : produire un score de probabilité de défaut, associé à une décision d’octroi, explicable et utilisable en production, avec un suivi dans le temps.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;Préparation&lt;/h3&gt;
+&lt;h4&gt;État initial et diagnostic&lt;/h4&gt;
+&lt;p&gt;Lorsque j’analyse l’existant, je constate qu’il n’y a pas encore de solution en production.
+En revanche, il existe une base de travail solide : des notebooks de modélisation, des datasets riches issus de plusieurs sources, et un premier travail de feature engineering déjà aligné avec la logique métier.&lt;/p&gt;
+&lt;p&gt;Le problème n’est donc pas la qualité de l’exploration, mais le &lt;strong&gt;passage à l’échelle&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Plusieurs écarts majeurs apparaissent :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pas d’API stable pour exposer le modèle,&lt;/li&gt;
+&lt;li&gt;pas de contrat de données clair,&lt;/li&gt;
+&lt;li&gt;pas de monitoring en production,&lt;/li&gt;
+&lt;li&gt;et une traçabilité incomplète malgré l’usage de MLflow.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;À ce stade, la solution est techniquement intéressante, mais &lt;strong&gt;non exploitable par le métier&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Choix de la solution cible&lt;/h4&gt;
+&lt;p&gt;La solution cible que je propose repose sur un principe simple :
+&lt;strong&gt;faire moins, mais mieux, et surtout durablement&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Côté modélisation, je privilégie des modèles tabulaires robustes, bien adaptés aux données de crédit. Ils offrent un bon compromis entre performance, stabilité et explicabilité.
+L’objectif n’est pas de maximiser un score abstrait, mais de maîtriser le coût métier, notamment en pénalisant fortement les faux négatifs.&lt;/p&gt;
+&lt;p&gt;L’explicabilité est intégrée dès la conception, à deux niveaux :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;globale, pour comprendre les facteurs de risque dominants,&lt;/li&gt;
+&lt;li&gt;locale, pour justifier une décision sur un dossier précis.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Côté industrialisation, l’architecture s’articule autour de briques simples et open source :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MLflow pour le suivi des expériences et des versions,&lt;/li&gt;
+&lt;li&gt;une API FastAPI pour le scoring,&lt;/li&gt;
+&lt;li&gt;Docker et CI/CD pour un déploiement reproductible,&lt;/li&gt;
+&lt;li&gt;et un système de logs structuré alimentant le monitoring.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le modèle devient ainsi un &lt;strong&gt;service&lt;/strong&gt;, et non plus un simple fichier de sortie de notebook.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Cas d’usage et valeur métier&lt;/h4&gt;
+&lt;p&gt;Quatre cas d’usage principaux sont priorisés.&lt;/p&gt;
+&lt;p&gt;D’abord, le scoring standard, exposé via une API, utilisé directement dans le parcours d’octroi.
+Ensuite, un scoring minimal, avec un nombre réduit de variables, pour des parcours rapides.
+Troisièmement, l’explicabilité locale, essentielle pour les analystes crédit et la conformité.
+Enfin, le monitoring continu, pour détecter les dérives de données ou de performance avant qu’elles n’impactent le métier.&lt;/p&gt;
+&lt;p&gt;Cette approche permet une adoption progressive par les équipes, tout en sécurisant la production.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;Déploiement&lt;/h3&gt;
+&lt;h4&gt;Démarche projet et pilotage&lt;/h4&gt;
+&lt;p&gt;Sur le plan méthodologique, je m’appuie sur une démarche inspirée de CRISP-DM, mais exécutée de façon agile.&lt;/p&gt;
+&lt;p&gt;Le projet est découpé en phases courtes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;cadrage métier et exploration des données,&lt;/li&gt;
+&lt;li&gt;préparation et modélisation avec sélection d’un seuil métier,&lt;/li&gt;
+&lt;li&gt;industrialisation et tests,&lt;/li&gt;
+&lt;li&gt;mise en place du monitoring,&lt;/li&gt;
+&lt;li&gt;puis optimisation et sécurisation des performances.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les décisions sont systématiquement appuyées par des indicateurs clairs.
+Côté business : taux d’acceptation, pertes nettes, délai de décision.
+Côté machine learning : AUC, recall, score custom, calibration.
+Côté opérations : latence, taux d’erreur, qualité des logs.&lt;/p&gt;
+&lt;p&gt;Ces KPI servent de langage commun entre le métier, la data et l’IT.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h4&gt;Suivi, monitoring et maîtrise du risque&lt;/h4&gt;
+&lt;p&gt;Un point clé du projet est le suivi post-déploiement.
+Chaque prédiction génère des traces exploitables : distributions de scores, dérive des features, performance dans le temps.&lt;/p&gt;
+&lt;p&gt;Un tableau de bord permet de surveiller :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;le drift des données,&lt;/li&gt;
+&lt;li&gt;la stabilité des scores,&lt;/li&gt;
+&lt;li&gt;et les performances opérationnelles de l’API.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Un runbook est également défini pour guider les équipes en cas d’incident : identifier rapidement si le problème vient des données, du modèle ou de l’infrastructure.&lt;/p&gt;
+&lt;p&gt;On passe ainsi d’un modèle “boîte noire” à un &lt;strong&gt;système maîtrisé et observable&lt;/strong&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;Conclusion et perspectives&lt;/h3&gt;
+&lt;p&gt;Pour conclure, ce projet illustre le passage d’un besoin métier critique à une solution MLOps complète et exploitable.
+Le modèle n’est pas seulement performant : il est &lt;strong&gt;aligné avec les enjeux économiques&lt;/strong&gt;, explicable, industrialisé et surveillé dans le temps.&lt;/p&gt;
+&lt;p&gt;Les prochaines étapes sont clairement identifiées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;mise en place de retrainings périodiques,&lt;/li&gt;
+&lt;li&gt;amélioration éventuelle de la calibration des probabilités,&lt;/li&gt;
+&lt;li&gt;enrichissement des dashboards avec des segments métier,&lt;/li&gt;
+&lt;li&gt;et, à terme, une approche champion/challenger pour faire évoluer le scoring sans risque.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/credit-scoring/</guid><pubDate>Wed, 31 Dec 2025 23:00:01 GMT</pubDate></item><item><title>Attrition ESN</title><link>https://stephmnt.github.io/datascience_portfolio/posts/attrition-esn/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;h3&gt;1. Contexte et analyse des besoins&lt;/h3&gt;
+&lt;h4&gt;1.1 Présentation (organisation et / ou contexte)&lt;/h4&gt;
+&lt;p&gt;Quand j'ai pris le projet en main, le constat était simple : la DRH disposait de trois exports de données (SIRH, évaluations, sondage interne) mais pas d'un outil fiable pour anticiper les départs. L'enjeu n'était pas seulement de produire un score, mais de créer un cadre de décision clair et traçable pour accompagner les managers.&lt;/p&gt;
+&lt;p&gt;Le contexte technique était favorable : une stack Python déjà choisie, la possibilité d'utiliser PostgreSQL, et un besoin de démonstration rapide (soutenance, déploiement léger sur Hugging Face). La maturité data est intermédiaire : données structurées et riches, mais pipeline et supervision encore à bâtir.&lt;/p&gt;
+&lt;h4&gt;1.2 Collecte et analyse du besoin métier&lt;/h4&gt;
+&lt;p&gt;Je me suis d'abord aligné avec les parties prenantes clés : RH (utilisateurs finaux), managers (bénéficiaires des alertes), data/IT (industrialisation), et conformité (RGPD, biais).&lt;/p&gt;
+&lt;p&gt;Le recueil s'est fait à partir des livrables existants du projet et de l'analyse du dépôt :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;compréhension des données brutes (3 fichiers CSV) et de leur usage ;&lt;/li&gt;
+&lt;li&gt;analyse de la documentation et des choix techniques ;&lt;/li&gt;
+&lt;li&gt;revue des modules clés (&lt;code&gt;main.py&lt;/code&gt;, &lt;code&gt;app.py&lt;/code&gt;, &lt;code&gt;projet_05/dataset.py&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les besoins ont été hiérarchisés autour de trois priorités :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;fiabiliser la fusion des sources et la préparation des données ;&lt;/li&gt;
+&lt;li&gt;fournir un score de risque compréhensible avec un seuil de décision ajustable ;&lt;/li&gt;
+&lt;li&gt;garantir la traçabilité des prédictions (journalisation).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Contraintes majeures :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;disponibilité d'une base PostgreSQL en local, mais non sur Hugging Face (nécessité d'un fallback pandas) ;&lt;/li&gt;
+&lt;li&gt;exigences de confidentialité et d'audit (journalisation des décisions) ;&lt;/li&gt;
+&lt;li&gt;temps et budget limités pour une démonstration fonctionnelle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;2. Audit de la solution data existante (ou proposée si absence de solution existante)&lt;/h3&gt;
+&lt;h4&gt;2.1 Solution actuelle ou proposée&lt;/h4&gt;
+&lt;p&gt;L'absence de solution existante a conduit à proposer une architecture pragmatique, modulaire et orientée démonstration :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ingestion des trois sources via &lt;code&gt;scripts/init_db.py&lt;/code&gt; vers PostgreSQL ;&lt;/li&gt;
+&lt;li&gt;préparation et fusion dans &lt;code&gt;projet_05/dataset.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;feature engineering + entraînement via &lt;code&gt;projet_05/features.py&lt;/code&gt; et &lt;code&gt;projet_05/modeling/train.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;modèle sérialisé dans &lt;code&gt;models/best_model.joblib&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio dans &lt;code&gt;app.py&lt;/code&gt; avec onglets Formulaire, Tableau, CSV et données brutes ;&lt;/li&gt;
+&lt;li&gt;journalisation des prédictions dans &lt;code&gt;prediction_logs&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Flux simplifié :&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+flowchart LR
+  A[CSV bruts] --&amp;gt; B[(PostgreSQL)]
+  B --&amp;gt; C[preparation/merge]
+  C --&amp;gt; D[features]
+  D --&amp;gt; E[entrainement]
+  E --&amp;gt; F[modele]
+
+  C --&amp;gt; G[Gradio]
+  F --&amp;gt; G
+
+  G --&amp;gt; H[logs predictions]
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;h4&gt;2.2 Évaluation de l'adéquation aux besoins&lt;/h4&gt;
+&lt;p&gt;Critères d'analyse :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;performance : inference rapide sur données tabulaires, pipeline de training séparé ;&lt;/li&gt;
+&lt;li&gt;scalabilité : suffisante pour un POC, limite pour des volumes massifs ;&lt;/li&gt;
+&lt;li&gt;coût : stack open source, déploiement léger ;&lt;/li&gt;
+&lt;li&gt;pertinence métier : score explicite, seuil ajustable, logs d'audit.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Écarts et limites identifiés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;dépendance à PostgreSQL pour le suivi fin ; sur Hugging Face, la journalisation est limitée ;&lt;/li&gt;
+&lt;li&gt;couverture de tests partielle (zones non couvertes en modeling et explainability) ;&lt;/li&gt;
+&lt;li&gt;absence d'un module d'explicabilité pleinement exploité dans la démonstration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. Identification d'une solution technique cible&lt;/h3&gt;
+&lt;p&gt;Comparatif d'approches techniques :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;règles métiers simples : rapide, mais faible précision et faible adaptabilité ;&lt;/li&gt;
+&lt;li&gt;ML classique sur données tabulaires (scikit-learn) : meilleur compromis qualité/complexité ;&lt;/li&gt;
+&lt;li&gt;architectures plus lourdes (deep learning, MLOps avancé) : surdimensionnées pour le besoin actuel.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;La solution cible retient un ML classique avec une couche de pilotage légère :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour l'intégrité et la traçabilité ;&lt;/li&gt;
+&lt;li&gt;pipeline Python orchestré par &lt;code&gt;main.py&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;interface Gradio pour un usage immédiat ;&lt;/li&gt;
+&lt;li&gt;CI/CD GitHub Actions pour la reproductibilité.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Facteurs clés de succès :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;qualité et cohérence des trois sources ;&lt;/li&gt;
+&lt;li&gt;choix d'un seuil métier validé avec les RH ;&lt;/li&gt;
+&lt;li&gt;adoption par les équipes via une interface simple ;&lt;/li&gt;
+&lt;li&gt;traçabilité des décisions pour audit et amélioration continue.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Cas d'usage priorisés :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;scoring individuel via formulaire (usage quotidien RH) ;&lt;/li&gt;
+&lt;li&gt;scoring en lot via CSV (campagnes d'analyse) ;&lt;/li&gt;
+&lt;li&gt;monitoring des prédictions et des tendances (pilotage).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;4. Appui stratégique et méthodologique&lt;/h3&gt;
+&lt;h4&gt;4.1 Proposition de démarche projet&lt;/h4&gt;
+&lt;p&gt;J'ai structuré la démarche en étapes lisibles :&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;cadrage et compréhension des données ;&lt;/li&gt;
+&lt;li&gt;construction de la base et du pipeline de préparation ;&lt;/li&gt;
+&lt;li&gt;entraînement et évaluation du modèle ;&lt;/li&gt;
+&lt;li&gt;packaging et interface Gradio ;&lt;/li&gt;
+&lt;li&gt;déploiement, tests et documentation.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Méthodologie : une approche CRISP-DM avec itérations courtes (prototypage rapide, validation métier, itération).&lt;/p&gt;
+&lt;h4&gt;4.2 Aide à la prise de décision&lt;/h4&gt;
+&lt;p&gt;Risques et opportunités :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;opportunité : visibilité RH immédiate sur les risques de départ ;&lt;/li&gt;
+&lt;li&gt;risque : biais potentiels et perception RH (nécessité de transparence) ;&lt;/li&gt;
+&lt;li&gt;risque : dépendance aux données d'entrée, qualité variable des sources.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Scénarios budgétaires :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;scénario léger : stack open source locale + déploiement HF ;&lt;/li&gt;
+&lt;li&gt;scénario renforcé : base managée + monitoring avancé + gouvernance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;KPIs proposés :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;taux d'utilisation de l'outil par les RH ;&lt;/li&gt;
+&lt;li&gt;précision des alertes (taux de faux positifs / faux négatifs) ;&lt;/li&gt;
+&lt;li&gt;délai de mise à jour des modèles ;&lt;/li&gt;
+&lt;li&gt;volume et qualité des logs de prédiction.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Impacts pris en compte :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;éthique et conformité (RGPD, minimisation des données, explicabilité) ;&lt;/li&gt;
+&lt;li&gt;organisationnel (processus RH de suivi des alertes) ;&lt;/li&gt;
+&lt;li&gt;business (coût de l'attrition vs coût de l'intervention).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;5. Contrôle et suivi du projet&lt;/h3&gt;
+&lt;h4&gt;5.1 Tableau de bord de pilotage&lt;/h4&gt;
+&lt;p&gt;Indicateurs de suivi :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;avancement des livrables (pipeline, modèle, app, doc) ;&lt;/li&gt;
+&lt;li&gt;qualité et fraîcheur des données ;&lt;/li&gt;
+&lt;li&gt;performance du modèle et répartition des scores ;&lt;/li&gt;
+&lt;li&gt;volume de prédictions par source (formulaire, CSV, bruts).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Reporting recommandé :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;hebdomadaire pour l'équipe projet ;&lt;/li&gt;
+&lt;li&gt;mensuel pour le comité de pilotage RH/DSI.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;5.2 Outils et process de suivi&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;logs d'exécution &lt;code&gt;logs/pipeline_logs&lt;/code&gt; et &lt;code&gt;logs/tests_logs&lt;/code&gt; ;&lt;/li&gt;
+&lt;li&gt;journal des prédictions en base (&lt;code&gt;prediction_logs&lt;/code&gt;) ;&lt;/li&gt;
+&lt;li&gt;tests automatisés via Pytest ;&lt;/li&gt;
+&lt;li&gt;documentation continue via MkDocs.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;6. Conclusion &amp;amp; recommandations&lt;/h3&gt;
+&lt;p&gt;Ce projet part d'un besoin RH concret et aboutit à une solution opérationnelle : un pipeline data robuste, un modèle ML adapté aux données tabulaires et une interface accessible pour les équipes. Le tout est documenté et déployable rapidement.&lt;/p&gt;
+&lt;p&gt;Décisions structurantes :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PostgreSQL pour la fiabilité et l'audit ;&lt;/li&gt;
+&lt;li&gt;scikit-learn pour un ML lisible et efficace ;&lt;/li&gt;
+&lt;li&gt;Gradio pour une adoption rapide et une démonstration fluide.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Prochaines étapes recommandées :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;renforcer la couverture de tests et l'explicabilité ;&lt;/li&gt;
+&lt;li&gt;automatiser un monitoring de drift ;&lt;/li&gt;
+&lt;li&gt;préparer une version intégrable dans le SI RH.&lt;/li&gt;
+&lt;/ul&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/attrition-esn/</guid><pubDate>Fri, 31 Oct 2025 23:00:01 GMT</pubDate></item><item><title>Portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/posts/portfolio/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Découvrez mes projets de data science et machine learning sur Github ici, ou poursuivez la navigation pour voir les rapports de projet.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/portfolio/</guid><pubDate>Sun, 31 Aug 2025 22:00:03 GMT</pubDate></item><item><title>Un nouveau départ</title><link>https://stephmnt.github.io/datascience_portfolio/posts/nouveau-depart/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Pendant plusieurs années, j’ai accompagné des organisations dans leur transformation digitale. Mon fil conducteur, c’était toujours le même : partir d’un besoin métier, définir des indicateurs, piloter un projet et rendre les résultats lisibles pour décider.&lt;/p&gt;
+&lt;p&gt;À force, j’ai eu envie d’aller au-delà du constat et du reporting : utiliser la donnée pour anticiper, automatiser et produire de vraies solutions. C’est ce qui m’a amené à me reconvertir via un Master Data Scientist Machine Learning.&lt;/p&gt;
+&lt;p&gt;Aujourd’hui, je sais couvrir la chaîne complète : préparation et analyse des données, modélisation ML et deep learning, et surtout passage en production avec API, cloud et bonnes pratiques MLOps comme le monitoring et le drift. Et je garde un vrai plus issu de mon parcours : le cadrage, la gestion de projet et la pédagogie — je sais faire le lien entre équipes métier et technique et livrer quelque chose d’utilisable. Mon objectif, c’est de construire des produits data robustes, mesurables et utiles.&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="mermaid" data-theme="default"&gt;
+mindmap
+  root((Data Scientist - ML))
+    Analyse de données
+      Transformer des données brutes en dataset exploitable&lt;br&gt;Nettoyage, jointures, features, analyses exploratoires&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Modeling
+      Modèles supervisés pour prédire ou classer&lt;br&gt;Train validation, choix des métriques, optimisation&lt;br&gt;Projets: Credit scoring, Price recommendation.
+    Deep learning
+      Réseaux de neurones pour classification&lt;br&gt;Appliqué à des données complexes comme images ou texte&lt;br&gt;Projets: Image classification"
+    NLP et IA génératives
+      "Construire des systemes basés sur LLM&lt;br&gt;RAG pour retrouver des sources puis générer une réponse, et évaluation LLM&lt;br&gt;Projets: RAG LangChain Mistral Faiss, LLM evaluation"
+    MLOps et déploiement
+      Passer du notebook à un service utilisable&lt;br&gt;API, cloud, versioning, CI CD, monitoring et drift&lt;br&gt;Projets: ML model deployment API, Monitoring drift"
+    Compétences transférables
+      Ancien consultant en transformation digitale, j'apporte de compétences utiles en data science dans ce nouveau projet :&lt;br&gt;Cadrage besoin, KPI, gestion de projet, communication et storytelling&lt;br&gt;Projets: AI project framing et restitution sur tous les projets
+&lt;/div&gt;
+&lt;script&gt;
+(function () {
+  function renderMermaid() {
+    if (!window.mermaid) { return; }
+    var config = {"startOnLoad": false};
+    if (!window.__nikolaMermaidInitialized) {
+      window.mermaid.initialize(config);
+      window.__nikolaMermaidInitialized = true;
+    }
+    if (window.mermaid.run) {
+      window.mermaid.run({ querySelector: ".mermaid" });
+    } else if (window.mermaid.init) {
+      window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+  }
+  if (window.mermaid) {
+    renderMermaid();
+    return;
+  }
+  window.__nikolaMermaidReadyCallbacks = window.__nikolaMermaidReadyCallbacks || [];
+  window.__nikolaMermaidReadyCallbacks.push(renderMermaid);
+  if (window.__nikolaMermaidLoading) { return; }
+  window.__nikolaMermaidLoading = true;
+  var script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+  script.onload = function () {
+    var callbacks = window.__nikolaMermaidReadyCallbacks || [];
+    window.__nikolaMermaidReadyCallbacks = [];
+    callbacks.forEach(function (callback) { callback(); });
+  };
+  document.head.appendChild(script);
+}());
+&lt;/script&gt;
+&lt;p&gt;Voir aussi le &lt;a href="https://stephmnt.github.io/datascience_portfolio/pages/diagramme-competences"&gt;diagramme de flux de mes compétences transverses&lt;/a&gt;.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/nouveau-depart/</guid><pubDate>Sun, 31 Aug 2025 22:00:02 GMT</pubDate></item><item><title>À propos de ce portfolio</title><link>https://stephmnt.github.io/datascience_portfolio/posts/a-propos/</link><dc:creator>Stéphane Manet</dc:creator><description>&lt;p&gt;Ce portfolio présente une sélection de mes projets en science des données, mettant en avant mes compétences en analyse de données, modélisation prédictive et visualisation. Chaque projet illustre une approche méthodologique rigoureuse et l'utilisation d'outils modernes pour résoudre des problèmes réels.&lt;/p&gt;
+&lt;p&gt;Il a été réalisé dans le cadre de &lt;a href="https://openclassrooms.com/fr/paths/1047-data-scientist-machine-learning"&gt;ma formation en Data Science avec OpenClassRooms&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;J'ai utilisé le générateur de site statique &lt;a href="https://getnikola.com/"&gt;Nikola&lt;/a&gt; pour créer ce portfolio, ce qui m'a permis de personnaliser le design et d'organiser efficacement le contenu. Je me suis appuyé sur le thème "&lt;a href="https://html5up.net/"&gt;Paradigm Shift&lt;/a&gt;" que j'ai adapté au format Nikola. Pour les besoins de présentation du portfolio, j'ai développé deux plugins, l'un pour intégrer les repos GitHub des projets, et l'autre pour rendre les diagrammes Mermaid compatibles avec les shortcodes Nikola.&lt;/p&gt;</description><guid>https://stephmnt.github.io/datascience_portfolio/posts/a-propos/</guid><pubDate>Sun, 31 Aug 2025 22:00:01 GMT</pubDate></item></channel></rss>
